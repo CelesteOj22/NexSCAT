@@ -4,7 +4,7 @@
 <head>
     {% load static %}
     <meta charset="utf-8">
-    <title>I-Scat - Integrated Source Code Analysis Tool</title>
+    <title>NexScat - Nexus Source Code Analysis Tool</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -49,7 +49,7 @@
             <nav class="navbar navbar-expand-lg navbar-light px-4 px-lg-5 py-3 py-lg-0">
                 <a href="" class="navbar-brand p-0">
                     <a href="https://www.flaticon.es/iconos-gratis/analitica-de-datos" title="analítica de datos iconos"></a>
-                    <h1 class="m-0">I-Scat</h1>
+                    <h1 class="m-0">NexSCAT</h1>
                     <!-- <img src="img/logo.png" alt="Logo"> -->
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
@@ -59,12 +59,14 @@
                     <div class="navbar-nav mx-auto py-0">
                         <a href="#home" class="nav-item nav-link active">Home</a>
                         <a href="#about" class="nav-item nav-link">Herramientas</a>
-                        <a href="#feature" class="nav-item nav-link">Featres</a>
-                        <a href="#pricing" class="nav-item nav-link">Pricing</a>
-                        <a href="#review" class="nav-item nav-link">Review</a>
                         <a href="#contact" class="nav-item nav-link">Contact</a>
                     </div>
-                    <a href="login" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Login</a>
+                    {% if user.is_authenticated %}
+                        <span class="me-3 text-white fw-medium">Hola, {{ user.username }}</span>
+                        <a href="{% url 'main:logout' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Cerrar sesión</a>
+                    {% else %}
+                        <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Login</a>
+                        {% endif %}
                 </div>
             </nav>
 
@@ -72,9 +74,9 @@
                 <div class="container px-lg-5">
                     <div class="row g-8">
                         <div class="col-lg-9 text-center text-lg-start">
-                            <h1 class="text-white mb-4 animated slideInDown">Integrated Source Code Analysis Tool</h1>
+                            <h1 class="text-white mb-4 animated slideInDown">Nexus Source Code Analysis Tool</h1>
                             <p class="text-white pb-3 animated slideInDown">Analizá tus proyectos con +230 métricas de Calidad de Software y exportá los resultados en un formato XML, JSON o CSV</p>
-                            <a href="importarProyecto" class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">Analizar proyecto</a>
+                            <a href="{% url 'main:importarProyecto' %}" class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">Analizar proyecto</a>
                         </div>
                     </div>
                 </div>
@@ -91,20 +93,9 @@
                         <h5 class="text-primary-gradient fw-medium">Herramientas integradas</h5>
                         <h1 class="mb-4">Analizadores estaticos de codigo fuente</h1>
                         <p class="mb-4">Para analizar los proyectos se utlizaran las metricas y herramientas de analisis brindadas por <a class="text-primary-gradient fw-medium" href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> y <a class="text-primary-gradient fw-medium" href="https://sourcemeter.com/">Sourcemeter</a>. Para mas información puedes acceder a sus sitios oficiales.</p>
-                        <!--<div class="row g-4 mb-4">
-                            <div class="col-sm-6 wow fadeIn" data-wow-delay="0.5s">
-                                <div class="d-flex">
-                                    <i class="fa fa-search fa-2x text-primary-gradient flex-shrink-0 mt-1"></i>
-                                    <div class="ms-3">
-                                        <h2 class="mb-0" data-toggle="counter-up">1234</h2>
-                                        <p class="text-primary-gradient mb-0">Proyectos analizados</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>-->
                     </div>
                     <div class="col-lg-6">
-                        <img class="img-fluid wow fadeInUp" data-wow-delay="0.5s" src="{% static 'img/jeox2.png' %}">
+                        <img class="img-fluid wow fadeInUp" data-wow-delay="0.5s" style="right: 0; top: 0; height: auto; max-width: 70%; float: right; z-index: 0;" src="{% static 'img/herramientas.png' %}">
                         <!--<img class="img-fluid wow fadeInUp d-block" data-wow-delay="0.5s" style="max-width: 60%; float: left;"  src="{% static 'img/sm.png' %}">-->
                     </div>
                 </div>

@@ -1,10 +1,50 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Importar proyecto</title>
+    <title>Importar Proyecto</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .import-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 0 auto 100px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            color: #000;
+            position: relative;
+            z-index: 1;
+        }
+    </style>
 </head>
 <body>
+    <div class="hero-header">
+        <div class="center-wrapper">
+            <div class="import-container w-100" style="max-width: 500px;">
+                <h3 class="text-center mb-4">Importar Proyecto Local</h3>
 
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="{% url 'main:importarProyecto' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="path" class="form-label">Ruta del lote de proyectos en tu computadora</label>
+                        <input type="text" name="path" id="path" class="form-control" placeholder="Ej: C:/Users/Proyectos" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary-gradient">Analizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
+
+

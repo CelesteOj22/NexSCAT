@@ -3,7 +3,7 @@
 <head>
     {% load static %}
     <meta charset="utf-8">
-    <title>I-Scat - Integrated Source Code Analysis Tool</title>
+    <title>NexScat - Nexus Source Code Analysis Tool</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -33,28 +33,29 @@
 </head>
 
 <body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="51">
-    <meta charset="UTF-8">
-    <div class="container-xxl py-5" id="login">
-        <div class="container py-5 px-lg-5">
-            <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
-                <h2 class="text-primary-gradient fw-medium">Login</h2>
-            </div>
-            <div class="row g-4 mt-3 justify-content-center">
-                <div class="col-lg-6 col-md-5 wow fadeInUp" data-wow-delay="0.3s">
-                    <div class="feature-item bg-light rounded p-4">
-                        <br>
-                        <form action="" method="post">
-                            {% csrf_token %}
-                            <!-- En name va el nombre del campo de la bd referenciado -->
-                            <input type="text" name="username" id="" placeholder="Nombre de usuario">
-                            <br>
-                            <input type="password" name="password" id="" placeholder="Contraseña">
-                            <br>
-                            <button type="submit">Iniciar sesión</button>
-                        </form>
-                    </div>
+    <div class="container-xxl min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="bg-light rounded p-5 shadow-lg" style="width: 100%; max-width: 400px;">
+            <h2 class="text-primary-gradient fw-medium text-center mb-4">Login</h2>
+            <form action="{% url 'main:login' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="text" name="username" placeholder="Nombre de usuario" class="form-control">
                 </div>
-            </div>
+                <div class="mb-3">
+                    <input type="password" name="password" placeholder="Contraseña" class="form-control">
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary-gradient">Iniciar sesión</button>
+                </div>
+            </form>
+
+            {% if messages %}
+                <ul class="mt-3">
+                    {% for message in messages %}
+                        <li class="text-danger text-center">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
     </div>
 </body>
