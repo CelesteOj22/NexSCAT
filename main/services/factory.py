@@ -1,5 +1,5 @@
-from main.services import sonarQube
-from main.services import sourceMeter
+from main.services.sonarQube import SonarQube
+from main.services.sourceMeter import SourceMeter
 
-sonar = sonarQube("bin")
-source = sourceMeter("SMResults")
+sonar = SonarQube("bin")
+source = SourceMeter("SMResults")

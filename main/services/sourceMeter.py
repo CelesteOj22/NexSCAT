@@ -12,7 +12,7 @@ class SourceMeter(IHerramienta):
 
     def analizar(self, source, project_path: str):
         sep = project_path.split(sep='\\')
-        project_key = sep[-1]
+        project_key = self.normalizar_project_key(sep[-1])
 
         comando = (
             f'cd {project_path} && {source} '
@@ -32,9 +32,9 @@ class SourceMeter(IHerramienta):
                 text=True,
                 shell=True
             )
-            return f"✅ Proyecto {project_key} analizado con éxito en SourceMeter"
+            return f"Proyecto {project_key} analizado con éxito en SourceMeter"
         except Exception as e:
-            return f"❌ Error analizando {project_key} en SourceMeter: {e}"
+            return f"Error analizando {project_key} en SourceMeter: {e}"
 
     def procesar(self, project: Project, xlsx_path: str):
         """
@@ -58,13 +58,13 @@ class SourceMeter(IHerramienta):
                         defaults={"value": str(value)}
                     )
                 else:
-                    print(f"⚠ Métrica {metric_key} no encontrada en tabla metrics (SourceMeter)")
+                    print(f"Métrica {metric_key} no encontrada en tabla metrics (SourceMeter)")
 
             # actualizamos timestamp en el proyecto
-            project.lastanalysissm = timezone.now()
-            project.save(update_fields=["lastanalysissm"])
+            project.last_analysis_sm = timezone.now()
+            project.save(update_fields=["last_analysis_sm"])
 
-            print(f"✅ SourceMeter procesado para {project.name}")
+            print(f"SourceMeter procesado para {project.name}")
 
         except Exception as e:
-            print(f"❌ Error procesando SourceMeter XLSX: {e}")
+            print(f"Error procesando SourceMeter XLSX: {e}")

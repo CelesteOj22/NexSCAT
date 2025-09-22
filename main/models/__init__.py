@@ -5,3 +5,5 @@ from .classes import Class
 from .classMeasure import ClassMeasure
 from .componentMeasure import ComponentMeasure
 from .projectMeasure import ProjectMeasure
+from .sonarToken import SonarToken
+

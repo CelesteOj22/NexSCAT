@@ -63,6 +63,7 @@
                     </div>
                     {% if user.is_authenticated %}
                         <span class="me-3 text-white fw-medium">Hola, {{ user.username }}</span>
+                        <a href="{% url 'main:configurarToken' %}" class="nav-item nav-link">Configurar Token</a>
                         <a href="{% url 'main:logout' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Cerrar sesión</a>
                     {% else %}
                         <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Login</a>
@@ -102,7 +103,6 @@
             </div>
         </div>
         <!-- About End -->
-
 
         <!-- Features Start -->
         <div class="container-xxl py-5" id="feature">

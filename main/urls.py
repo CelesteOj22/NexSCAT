@@ -27,4 +27,5 @@ urlpatterns = [
     path("importarProyecto/", views.importarProyecto, name="importarProyecto"),
     path("accounts/login/", lambda request: redirect('login')),
     path("logout/", auth_views.LogoutView.as_view(next_page='main:home'), name='logout'),
+    path("configurarToken/", views.configurarToken, name="configurarToken"),
 ]

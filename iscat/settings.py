@@ -82,6 +82,14 @@ DATABASES = {
     }
 }
 
+#Celery - Redis para concurrencia
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_TASK_RETRY_MAX = 3
+CELERY_TASK_DEFAULT_RETRY_DELAY = 60
+# Celery: ejecutar tareas inmediatamente para pruebas
+CELERY_TASK_ALWAYS_EAGER = True
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

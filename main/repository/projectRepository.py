@@ -41,9 +41,10 @@ def update_project(project_name, last_analysis, tool):
     try:
         project = Project.objects.get(name__icontains=project_name)
         if tool == "sm":
-            project.lastAnalysissm = last_analysis
+            project.last_analysis_sm = last_analysis
         else:
-            project.lastAnalysissq = last_analysis
+            print("lastAnalysissq actualizado perra")
+            project.last_analysis_sq = last_analysis
         project.save()
     except Project.DoesNotExist:
         print("El proyecto no existe")

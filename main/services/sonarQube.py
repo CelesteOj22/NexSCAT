@@ -13,8 +13,7 @@ class SonarQube(IHerramienta):
 
     def analizar(self, scanner, project_path: str):
         sep = project_path.split(sep='\\')
-        project_key = sep[-1]  # 👈 último nombre de carpeta como key
-
+        project_key = self.normalizar_project_key(sep[-1])
         comando = (
             f'cd {project_path} && {scanner} '
             f'-Dsonar.projectKey={project_key} '
@@ -43,7 +42,7 @@ class SonarQube(IHerramienta):
 
     def procesar(self, project: Project, token=None):
         metric_keys = ",".join(Metric.objects.filter(tool="SonarQube").values_list("key", flat=True))
-        url = f"{self._hosturl}/api/measures/component?component={project.name}&metricKeys={metric_keys}"
+        url = f"{self._hosturl}/api/measures/component?component={project.key}&metricKeys={metric_keys}"
 
         auth = (token, "") if token else None
         response = requests.get(url, auth=auth)
@@ -67,7 +66,7 @@ class SonarQube(IHerramienta):
                     print(f"⚠ Métrica {metric_key} no encontrada en la tabla metrics (SonarQube)")
 
             # actualizamos timestamp en el proyecto
-            project.lastanalysissq = timezone.now()
-            project.save(update_fields=["lastanalysissq"])
+            project.last_analysis_sq = timezone.now()
+            project.save(update_fields=["last_analysis_sq"])
         else:
             print("❌ Error consultando API SonarQube:", response.text)
