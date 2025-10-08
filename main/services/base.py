@@ -9,12 +9,13 @@ class IHerramienta(ABC):
     """Interfaz para herramientas de análisis de proyectos."""
 
     @abstractmethod
-    def analizar(self, ejecutable: str, project_path: str) -> None:
+    def analizar(self, ejecutable: str, project_path: str, token: None) -> None:
         """
         Ejecuta el análisis sobre un proyecto con la herramienta concreta.
 
         :param ejecutable: Nombre de la herramienta
         :param project_path: Path del proyecto a analizar
+        :param token: token de user de sonarQbue
         """
         pass
 
@@ -35,7 +36,8 @@ class IHerramienta(ABC):
         """
         key = nombre.lower()
         key = re.sub(r'[^a-z0-9._:-]', '_', key)
-        return key if key else "proyecto"
+        key = key if key else "proyecto"
+        return f"nexscat:{key}"
 
     def start_sonarqube(self, sonar_path):
         # Arranca el proceso (no bloqueante)
@@ -46,3 +48,8 @@ class IHerramienta(ABC):
             stderr=subprocess.PIPE
         )
         return process
+
+    @abstractmethod
+    def is_up(self, token: str = None) -> bool:
+        """Verifica si la herramienta está disponible para análisis."""
+        pass

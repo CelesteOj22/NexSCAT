@@ -140,5 +140,5 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Rutas de herramientas de análisis
-SONAR_SCANNER_PATH = r"D:/sonar/sonar-scanner-4.7.0.2747-windows/bin/sonar-scanner.bat"
+SONAR_SCANNER_PATH = r"D:\sonar\sonar-scanner-4.7.0.2747-windows\bin\sonar-scanner.bat"
 SOURCEMETER_PATH = r"D:\sonar\SourceMeter-10.0.0-x64-Windows\Java\SourceMeterJava.exe"
