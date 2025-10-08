@@ -13,7 +13,7 @@ class SourceMeter(IHerramienta):
         self._runFB = 'true'
         self._FBFileList = 'filelist.txt'
 
-    def analizar(self, source, project_path: str, project_name:str):
+    def analizar(self, source, project_path: str):
         """
         Analiza un proyecto Java con SourceMeter
 
@@ -25,7 +25,7 @@ class SourceMeter(IHerramienta):
             tuple: (success: bool, message: str)
         """
         project_path = Path(project_path)
-        project_key = self.normalizar_project_key(project_name)
+        project_key = self.normalizar_project_key(project_path.name)
 
         if not project_path.exists():
             return False, f"❌ El directorio {project_path} no existe"
@@ -34,7 +34,7 @@ class SourceMeter(IHerramienta):
 
         comando = [
             source,
-            f"-projectName={project_name}",
+            f"-projectName={project_key}",
             f"-projectBaseDir={str(project_path)}",
             f"-resultsDir={str(results_base)}",
             f"-runFB={self._runFB}",
@@ -42,6 +42,11 @@ class SourceMeter(IHerramienta):
         ]
 
         try:
+            print(f"🔍 Comenzando análisis en SourceMeter de {project_key}")
+            print(f"📁 Proyecto: {project_path}")
+            print(f"📁 Resultados en: {results_base}")
+            print(f"⏳ Este proceso puede tomar varios minutos...")
+
             result = subprocess.run(
                 comando,
                 stdout=subprocess.PIPE,
@@ -55,7 +60,7 @@ class SourceMeter(IHerramienta):
             print(f"✅ Proceso de SourceMeter terminó para {project_key}")
 
             # Verificar archivos generados
-            analysis_dir = self._buscar_directorio_analisis(project_path, project_name)
+            analysis_dir = self._buscar_directorio_analisis(project_path, project_key)
             if analysis_dir:
                 print(f"✅ Proyecto {project_key} analizado con éxito")
                 print(f"📁 Análisis en: {analysis_dir}")
@@ -73,14 +78,13 @@ class SourceMeter(IHerramienta):
             print(error_msg)
             return False, error_msg
 
-    def _buscar_directorio_analisis(self, project_path: Path, project_name: str) -> Path:
+    def _buscar_directorio_analisis(self, project_path: Path, project_key: str) -> Path:
         """
         Busca el directorio de análisis más reciente
-        Ruta: project_path/SMResults/project_name/java/TIMESTAMP/
+        Ruta: project_path/SMResults/project_key/java/TIMESTAMP/
         """
+        results_base = project_path / "SMResults" / project_key / "java"
 
-        results_base = project_path / "SMResults" / project_name / "java"
-        print(f"RESULT BASE BITCH {results_base}")
         if not results_base.exists():
             print(f"❌ No existe {results_base}")
             return None
@@ -99,18 +103,18 @@ class SourceMeter(IHerramienta):
         print(f"📁 Usando análisis: {latest_dir.name}")
         return latest_dir
 
-    def procesar(self, project: Project, project_name: str):
+    def procesar(self, project: Project, project_key: str):
         """
         Procesa todos los niveles: Project, Components (packages) y Classes
 
         Args:
             project: Instancia del modelo Project
-            project_name: NOMBRE del proyecto SIN normalizar (ej: checkstyle-4.3)
+            project_key: Clave del proyecto
         """
         print("🔄 Iniciando procesamiento de SourceMeter...")
 
         project_path = Path(project.path)
-        analysis_dir = self._buscar_directorio_analisis(project_path, project_name)
+        analysis_dir = self._buscar_directorio_analisis(project_path, project_key)
 
         if not analysis_dir:
             print(f"❌ No se puede procesar: directorio de análisis no encontrado")
@@ -120,7 +124,7 @@ class SourceMeter(IHerramienta):
 
         # 1. Procesar métricas a nivel PROJECT (Component.csv)
         print("\n📊 Procesando nivel PROJECT...")
-        component_csv = analysis_dir / f"{project.name}-Component.csv"
+        component_csv = analysis_dir / f"{project_key}-Component.csv"
         if component_csv.exists():
             n = self._procesar_project_level(project, component_csv)
             total_procesadas += n
@@ -130,7 +134,7 @@ class SourceMeter(IHerramienta):
 
         # 2. Procesar COMPONENTS/Packages (Package.csv)
         print("\n📦 Procesando nivel PACKAGE/COMPONENT...")
-        package_csv = analysis_dir / f"{project.name}-Package.csv"
+        package_csv = analysis_dir / f"{project_key}-Package.csv"
         if package_csv.exists():
             n = self._procesar_package_level(project, package_csv)
             total_procesadas += n
@@ -140,7 +144,7 @@ class SourceMeter(IHerramienta):
 
         # 3. Procesar CLASSES (Class.csv)
         print("\n🏛️ Procesando nivel CLASS...")
-        class_csv = analysis_dir / f"{project.name}-Class.csv"
+        class_csv = analysis_dir / f"{project_key}-Class.csv"
         if class_csv.exists():
             n = self._procesar_class_level(project, class_csv)
             total_procesadas += n
@@ -341,12 +345,12 @@ class SourceMeter(IHerramienta):
             traceback.print_exc()
             return 0
 
-    def procesar_con_reintentos(self, project: Project, project_name: str, max_reintentos: int = 3):
+    def procesar_con_reintentos(self, project: Project, project_key: str, max_reintentos: int = 3):
         """Procesa con reintentos"""
         for intento in range(max_reintentos):
             try:
                 print(f"🔄 Intento {intento + 1}/{max_reintentos} procesando SourceMeter...")
-                self.procesar(project, project_name)
+                self.procesar(project, project_key)
                 return True
             except Exception as e:
                 print(f"❌ Error en intento {intento + 1}: {e}")
