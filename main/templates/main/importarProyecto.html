@@ -7,30 +7,94 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     <style>
+        .hero-header {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .center-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .import-container {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 16px;
             padding: 30px;
+            width: 100%;
             max-width: 500px;
-            margin: 0 auto 100px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
             color: #000;
             position: relative;
             z-index: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .import-container {
+                padding: 20px;
+                max-width: 100%;
+                border-radius: 12px;
+            }
+
+            .hero-header {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .import-container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .import-container h3 {
+                font-size: 1.25rem;
+            }
+        }
+
+        #progressModal .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .progress-step {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+        }
+
+        .progress-step.completed {
+            background-color: #198754;
+            color: white;
+        }
+
+        .progress-step i {
+            margin-right: 10px;
         }
     </style>
 </head>
 <body>
     <div class="hero-header">
         <div class="center-wrapper">
-            <div class="import-container w-100" style="max-width: 500px;">
+            <div class="import-container">
                 <h3 class="text-center mb-4">Importar Proyecto Local</h3>
-
                 {% if error %}
                     <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-
-                <form method="post" action="{% url 'main:importarProyecto' %}">
+                <form method="post" action="{% url 'main:importarProyecto' %}" id="importForm">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="path" class="form-label">Ruta del lote de proyectos en tu computadora</label>
@@ -43,12 +107,60 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Progreso -->
+    <div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Analizando Proyectos</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar"
+                             id="progressBar"
+                             style="width: 0%">0%</div>
+                    </div>
+
+                    <div id="progressSteps">
+                        <div class="progress-step" id="step1">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span>Verificando herramientas...</span>
+                        </div>
+                        <div class="progress-step" id="step2">
+                            <i class="bi bi-folder-check"></i>
+                            <span>Escaneando proyectos...</span>
+                        </div>
+                        <div class="progress-step" id="step3">
+                            <i class="bi bi-gear"></i>
+                            <span>Analizando con herramientas...</span>
+                        </div>
+                        <div class="progress-step" id="step4">
+                            <i class="bi bi-bar-chart"></i>
+                            <span>Procesando métricas...</span>
+                        </div>
+                        <div class="progress-step" id="step5">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Guardando resultados...</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Por favor, no cierres esta ventana</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Mensajes -->
     {% if messages %}
     <div class="modal fade" id="messageModal" tabindex="-1">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Mensaje</h5>
+            <h5 class="modal-title">Resultado</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
@@ -71,9 +183,52 @@
     });
     </script>
     {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            // Mostrar modal de progreso
+            const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+            modal.show();
+
+            // Simular progreso
+            let progress = 0;
+            let currentStep = 1;
+            const totalSteps = 5;
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+
+                // Actualizar barra de progreso
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = Math.round(progress) + '%';
+
+                // Actualizar pasos
+                const stepProgress = Math.floor((progress / 100) * totalSteps);
+                if (stepProgress > currentStep - 1) {
+                    // Marcar paso anterior como completado
+                    if (currentStep > 1) {
+                        const prevStep = document.getElementById('step' + (currentStep - 1));
+                        prevStep.classList.remove('active');
+                        prevStep.classList.add('completed');
+                    }
+
+                    // Activar paso actual
+                    if (currentStep <= totalSteps) {
+                        const step = document.getElementById('step' + currentStep);
+                        step.classList.add('active');
+                        currentStep++;
+                    }
+                }
+
+                // El formulario se enviará normalmente y el modal se cerrará cuando la página recargue
+                if (progress >= 99) {
+                    clearInterval(interval);
+                }
+            }, 500);
+        });
+    </script>
 </body>
 </html>
-
-
-

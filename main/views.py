@@ -78,13 +78,12 @@ def importarProyecto(request):
             return render(request, 'main/importarProyecto.html')
 
         usu_token = SonarToken.objects.get(user=request.user)
-        """
+
         try:
             sonar.check_tool_status(sonar, usu_token.token)
         except Exception as e:
             messages.error(request, str(e))
             return render(request, 'main/importarProyecto.html')
-        """
 
         directorio = pathlib.Path(path)
         print("Comenzando el analisis de " + str(len(os.listdir(path))) + " proyecto/s")
@@ -132,7 +131,7 @@ def analizarProyectos(proyecto_path, usu_logueado):
             print(f"✅ Proyecto {project_name} creado en la base con key {project_key}")
 
         resultados = {}
-        """
+
         # 🔹 Analizar con SonarQube
         try:
             # Analizar el proyecto
@@ -144,9 +143,13 @@ def analizarProyectos(proyecto_path, usu_logueado):
             resultados["sonar"] = mensaje
 
             if resultado_ok:
-                # 🆕 USAR EL MÉTODO CON REINTENTOS
                 try:
+                    # Procesar métricas a nivel PROYECTO (tu código actual)
                     sonar.procesar_con_reintentos(project, usu_token.token, project_key)
+
+                    # Procesar componentes (archivos y directorios)
+                    sonar.procesar_componentes(project, usu_token.token, project_key)
+
                     update_project(project_name, timezone.now(), "sq")
                     resultados["sonar_metrics"] = "✅ Métricas procesadas exitosamente"
                 except Exception as e:
@@ -184,7 +187,7 @@ def analizarProyectos(proyecto_path, usu_logueado):
         except Exception as e:
             print(f"❌ Error en SourceMeter para {project_name}: {e}")
             resultados["sourcemeter_error"] = str(e)
-
+        """
         return resultados
 
     except Exception as e:

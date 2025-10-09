@@ -4,18 +4,15 @@ import subprocess
 from main.models import Project
 
 
-
 class IHerramienta(ABC):
     """Interfaz para herramientas de análisis de proyectos."""
 
     @abstractmethod
-    def analizar(self, ejecutable: str, project_path: str, token: None) -> None:
+    def analizar(self, *args, **kwargs):
         """
         Ejecuta el análisis sobre un proyecto con la herramienta concreta.
 
-        :param ejecutable: Nombre de la herramienta
-        :param project_path: Path del proyecto a analizar
-        :param token: token de user de sonarQbue
+        Cada herramienta implementa sus propios parámetros según necesite.
         """
         pass
 
@@ -40,7 +37,7 @@ class IHerramienta(ABC):
         return f"nexscat:{key}"
 
     def start_sonarqube(self, sonar_path):
-        # Arranca el proceso (no bloqueante)
+        """Arranca SonarQube (no bloqueante)"""
         process = subprocess.Popen(
             [f"{sonar_path}/bin/windows-x86-64/StartSonar.bat"],
             shell=True,

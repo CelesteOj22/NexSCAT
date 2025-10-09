@@ -6,7 +6,7 @@ class Component(models.Model):
     id_project = models.ForeignKey('Project', models.DO_NOTHING, db_column='id_project')
     qualifier = models.CharField(max_length=10)
     path = models.CharField(max_length=250)
-    key = models.CharField(max_length=100)
+    key = models.CharField(max_length=500)
 
     def __str__(self):
         return self.name

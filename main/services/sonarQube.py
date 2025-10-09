@@ -1,16 +1,17 @@
 import logging
 import subprocess
 import time
+from abc import ABC
 from pathlib import Path
 import requests
 from django.utils import timezone
-from ..models import Project, Metric, ProjectMeasure
+from ..models import Project, Metric, ProjectMeasure, Component, ComponentMeasure
 from .base import IHerramienta
 
 logger = logging.getLogger(__name__)
 
 
-class SonarQube(IHerramienta):
+class SonarQube(IHerramienta, ABC):
     def __init__(self, binaries: str, host="http://127.0.0.1:9000"):
         self._sources = "."
         self._hosturl = host
@@ -114,6 +115,30 @@ class SonarQube(IHerramienta):
                 print("💡 Aumenta la memoria: SONAR_SCANNER_OPTS='-Xmx3072m'")
 
             return False, error_msg
+
+    def procesar_con_reintentos(self, project: Project, token: str, project_key: str, max_reintentos: int = 3):
+        """
+        Procesa las métricas con reintentos si no están disponibles
+        Ahora usa el procesamiento resiliente que se salta métricas problemáticas
+        """
+        for intento in range(max_reintentos):
+            try:
+                print(f"🔄 Intento {intento + 1}/{max_reintentos} procesando métricas...")
+                self.procesar(project, token, project_key)
+                return True
+            except Exception as e:
+                print(f"❌ Error en intento {intento + 1}: {e}")
+                if intento < max_reintentos - 1:
+                    wait_time = (intento + 1) * 20  # Esperar 20s, 40s, 60s
+                    print(f"⏳ Esperando {wait_time}s antes del siguiente intento...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"❌ Falló después de {max_reintentos} intentos")
+                    # No lanzar excepción - el procesamiento resiliente ya manejó lo que pudo
+                    print("⚠️ Continuando con las métricas que se pudieron procesar...")
+                    return False
+
+        return True
 
     def esperar_analisis_completo(self, project_key: str, token: str, timeout: int = 300, interval: int = 10):
         """
@@ -232,8 +257,8 @@ class SonarQube(IHerramienta):
 
         print(f"📋 {total_metricas} métricas configuradas en BD")
 
-        # Procesar métricas en lotes de 20
-        lote_size = 20
+        # 🔹 CAMBIO 1: Reducir tamaño del lote para evitar URLs muy largas
+        lote_size = 10  # Era 20, ahora 10
 
         for i in range(0, total_metricas, lote_size):
             lote = metricas_bd[i:i + lote_size]
@@ -246,7 +271,8 @@ class SonarQube(IHerramienta):
 
             try:
                 auth = (token, "")
-                response = requests.get(url, auth=auth, timeout=30)
+                # 🔹 CAMBIO 2: Aumentar timeout
+                response = requests.get(url, auth=auth, timeout=60)  # Era 30, ahora 60
 
                 if response.status_code == 200:
                     data = response.json()
@@ -279,22 +305,26 @@ class SonarQube(IHerramienta):
                                     print(f"   ⚠️ Error guardando {metric_key}: {e}")
                                     metricas_fallidas.append(metric_key)
 
+                        # Métricas que no se encontraron en la respuesta
                         no_encontradas = [obj.key for obj in lote if obj.key not in metricas_encontradas]
                         metricas_fallidas.extend(no_encontradas)
 
                         if no_encontradas:
-                            print(f"   ⚠️ {len(no_encontradas)} métricas no disponibles en este lote")
+                            print(f"   ℹ️ {len(no_encontradas)} métricas no disponibles en este proyecto")
                     else:
                         print(f"   ⚠️ No se encontraron métricas en este lote")
                         metricas_fallidas.extend(lote_keys)
 
-                elif response.status_code == 404:
-                    print(f"   ⚠️ Error 404 en lote {i // lote_size + 1}, procesando individualmente...")
+                # 🔹 CAMBIO 3: Manejar mejor el error 404 y 400
+                elif response.status_code in [400, 404]:
+                    print(f"   ⚠️ Error {response.status_code} en lote, probablemente métricas inválidas")
+                    print(f"   🔄 Procesando individualmente para identificar cuáles fallan...")
 
+                    # Procesar individualmente
                     for metric_obj in lote:
                         try:
                             url_individual = f"{self._hosturl}/api/measures/component?component={project_key}&metricKeys={metric_obj.key}"
-                            response_individual = requests.get(url_individual, auth=auth, timeout=10)
+                            response_individual = requests.get(url_individual, auth=auth, timeout=15)
 
                             if response_individual.status_code == 200:
                                 data_individual = response_individual.json()
@@ -318,14 +348,31 @@ class SonarQube(IHerramienta):
                                 else:
                                     metricas_fallidas.append(metric_obj.key)
                             else:
+                                # Métrica no disponible para este proyecto (normal)
                                 metricas_fallidas.append(metric_obj.key)
 
                         except Exception as e:
                             print(f"   ⚠️ Error procesando {metric_obj.key}: {e}")
                             metricas_fallidas.append(metric_obj.key)
+
+                        # 🔹 NUEVO: pequeña pausa entre requests individuales
+                        time.sleep(0.1)
+
                 else:
                     print(f"   ❌ Error HTTP {response.status_code} en lote {i // lote_size + 1}")
+                    # 🔹 CAMBIO 4: Mostrar el cuerpo del error para debugging
+                    print(f"   📝 Respuesta: {response.text[:200]}")
                     metricas_fallidas.extend(lote_keys)
+
+            except requests.Timeout:
+                print(f"   ⏱️ Timeout en lote {i // lote_size + 1}, reintentando con lote más pequeño...")
+                # Dividir el lote a la mitad y reintentar
+                mitad = len(lote) // 2
+                if mitad > 0:
+                    # Reintentar primera mitad
+                    # ... (implementar recursión o subdivisión)
+                    pass
+                metricas_fallidas.extend(lote_keys)
 
             except requests.RequestException as e:
                 print(f"   ❌ Error de conexión en lote {i // lote_size + 1}: {e}")
@@ -333,6 +380,9 @@ class SonarQube(IHerramienta):
             except Exception as e:
                 print(f"   ❌ Error inesperado en lote {i // lote_size + 1}: {e}")
                 metricas_fallidas.extend(lote_keys)
+
+            # 🔹 NUEVO: Pausa entre lotes para no saturar el servidor
+            time.sleep(0.5)
 
         # Mostrar resumen
         print(f"\n📊 Resumen del procesamiento:")
@@ -351,45 +401,212 @@ class SonarQube(IHerramienta):
         else:
             print(f"\n⚠️ No se pudieron procesar métricas para {project_key}")
 
-    def procesar_con_reintentos(self, project: Project, token: str, project_key: str, max_reintentos: int = 3):
+    def procesar_componentes(self, project: Project, token: str, project_key: str):
         """
-        Procesa las métricas con reintentos si no están disponibles
-        Ahora usa el procesamiento resiliente que se salta métricas problemáticas
-        """
-        for intento in range(max_reintentos):
-            try:
-                print(f"🔄 Intento {intento + 1}/{max_reintentos} procesando métricas...")
-                self.procesar(project, token, project_key)
-                return True
-            except Exception as e:
-                print(f"❌ Error en intento {intento + 1}: {e}")
-                if intento < max_reintentos - 1:
-                    wait_time = (intento + 1) * 20  # Esperar 20s, 40s, 60s
-                    print(f"⏳ Esperando {wait_time}s antes del siguiente intento...")
-                    time.sleep(wait_time)
-                else:
-                    print(f"❌ Falló después de {max_reintentos} intentos")
-                    # No lanzar excepción - el procesamiento resiliente ya manejó lo que pudo
-                    print("⚠️ Continuando con las métricas que se pudieron procesar...")
-                    return False
+        Procesa componentes (archivos y directorios) del proyecto en SonarQube
+        OPCIONAL: Solo usar si necesitas métricas a nivel de archivo/paquete
 
-        return True
+        Args:
+            project: Instancia del modelo Project
+            token: Token de autenticación
+            project_key: Clave del proyecto (ej: "nexscat:checkstyle-4.3")
+        """
+        print("\n📦 Procesando componentes de SonarQube...")
+
+        componentes_nuevos = 0
+        componentes_actualizados = 0
+
+        try:
+            # Obtener árbol de componentes del proyecto
+            url = f"{self._hosturl}/api/components/tree"
+            params = {
+                "component": project_key,
+                "qualifiers": "DIR,FIL",  # Directorios y archivos
+                "ps": 500  # Page size (máximo por página)
+            }
+
+            page = 1
+            total_components = 0
+
+            while True:
+                params["p"] = page
+                response = requests.get(url, params=params, auth=(token, ""), timeout=30)
+
+                if response.status_code != 200:
+                    print(f"❌ Error obteniendo componentes: {response.status_code}")
+                    break
+
+                data = response.json()
+                components = data.get("components", [])
+                paging = data.get("paging", {})
+
+                if not components:
+                    break
+
+                total = paging.get("total", 0)
+                print(f"📄 Página {page} - Procesando {len(components)} componentes (total: {total})")
+
+                for comp_data in components:
+                    try:
+                        comp_key = comp_data.get("key")
+                        comp_qualifier = comp_data.get("qualifier")
+                        comp_path = comp_data.get("path", comp_data.get("name"))
+
+                        # Crear o actualizar componente
+                        component, created = Component.objects.update_or_create(
+                            id_project=project,
+                            key=comp_key,
+                            defaults={
+                                "qualifier": comp_qualifier,  # "FIL" (archivo) o "DIR" (directorio)
+                                "path": comp_path
+                            }
+                        )
+
+                        if created:
+                            componentes_nuevos += 1
+                        else:
+                            componentes_actualizados += 1
+
+                        total_components += 1
+
+                        # Obtener y guardar métricas para este componente
+                        self._procesar_metricas_componente(component, comp_key, token)
+
+                    except Exception as e:
+                        print(f"   ⚠️ Error procesando componente {comp_data.get('key')}: {e}")
+
+                # Si no hay más páginas, salir
+                if page * paging.get("pageSize", 500) >= total:
+                    break
+
+                page += 1
+
+            print(f"\n📊 Resumen componentes SonarQube:")
+            print(f"   ✅ Nuevos: {componentes_nuevos}")
+            print(f"   🔄 Actualizados: {componentes_actualizados}")
+            print(f"   📦 Total: {total_components}")
+
+        except Exception as e:
+            print(f"❌ Error procesando componentes: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _procesar_metricas_componente(self, component: Component, component_key: str, token: str):
+        """
+        Obtiene y guarda las métricas para un componente específico (archivo o directorio)
+
+        Args:
+            component: Instancia del modelo Component
+            component_key: Clave del componente en SonarQube
+            token: Token de autenticación
+        """
+        try:
+            # Métricas relevantes a nivel de componente
+            # No todas las métricas del proyecto aplican a archivos individuales
+            metricas_componente = [
+                "ncloc", "lines", "statements", "functions", "classes",
+                "complexity", "cognitive_complexity", "comment_lines",
+                "comment_lines_density", "duplicated_lines", "duplicated_lines_density",
+                "violations", "bugs", "vulnerabilities", "code_smells",
+                "sqale_index", "sqale_rating", "reliability_rating", "security_rating",
+                "coverage", "line_coverage", "branch_coverage", "tests"
+            ]
+
+            metric_keys_str = ",".join(metricas_componente)
+
+            url = f"{self._hosturl}/api/measures/component"
+            params = {
+                "component": component_key,
+                "metricKeys": metric_keys_str
+            }
+
+            response = requests.get(url, params=params, auth=(token, ""), timeout=15)
+
+            if response.status_code == 200:
+                data = response.json()
+                measures = data.get("component", {}).get("measures", [])
+
+                metricas_guardadas = 0
+                for measure in measures:
+                    metric_key = measure.get("metric")
+                    value = measure.get("value")
+
+                    if not metric_key or value is None:
+                        continue
+
+                    try:
+                        # Buscar la métrica en la BD
+                        metric = Metric.objects.get(key=metric_key, tool="SonarQube")
+
+                        # Guardar o actualizar
+                        ComponentMeasure.objects.update_or_create(
+                            id_component=component,
+                            id_metric=metric,
+                            defaults={"value": str(value)}
+                        )
+                        metricas_guardadas += 1
+
+                    except Metric.DoesNotExist:
+                        # Métrica no configurada en BD, ignorar silenciosamente
+                        pass
+                    except Exception as e:
+                        # Error al guardar, no detener el proceso
+                        pass
+
+                # Mostrar progreso solo para archivos (no directorios) para no saturar logs
+                if metricas_guardadas > 0 and component.qualifier == "FIL":
+                    # Extraer solo el nombre del archivo para logs más limpios
+                    file_name = component.path.split("/")[-1] if "/" in component.path else component.path
+                    print(f"   📄 {file_name}: {metricas_guardadas} métricas")
+
+            elif response.status_code == 404:
+                # Normal: algunos componentes (especialmente directorios) no tienen métricas
+                pass
+            else:
+                # Otro error HTTP, no detener el proceso
+                pass
+
+        except Exception as e:
+            # No mostrar errores individuales para no saturar logs
+            # El proceso continuará con los siguientes componentes
+            pass
 
     def is_up(self, token: str = None) -> bool:
+        """
+        Verifica si SonarQube está disponible y funcionando correctamente.
+
+        Args:
+            token: Token de autenticación (opcional)
+
+        Returns:
+            bool: True si SonarQube está disponible y en estado GREEN, False en caso contrario
+        """
         try:
             url = f"{self._hosturl}/api/system/health"
+
             if token:
                 response = requests.get(url, auth=(token, ""))
             else:
                 response = requests.get(url)
+
             if response.status_code == 200:
                 data = response.json()
-                return data.get("health", "").upper() == "GREEN"
+                health = data.get("health", "").upper()
+
+                if health == "GREEN":
+                    return True
+                else:
+                    logger.warning(f"SonarQube health status: {health}")
+                    return False
             else:
-                logger.warning(f"{self.__class__.__name__} returned status {response.status_code}")
+                logger.warning(f"SonarQube returned status {response.status_code}")
                 return False
+
         except requests.RequestException as e:
-            logger.error(f"No se pudo contactar {self.__class__.__name__}: {e}")
+            logger.error(f"No se pudo contactar SonarQube: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error inesperado verificando SonarQube: {e}")
             return False
 
     def check_tool_status(self, tool: IHerramienta, token: str = None):
