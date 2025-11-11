@@ -1,0 +1,648 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Métricas</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .hero-header {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 0 auto;
+            max-width: 1400px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            color: #000;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filters-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .filter-group {
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .filter-input {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+            color: white;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+            color: white;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .metrics-table {
+            margin-bottom: 0;
+        }
+
+        .metrics-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .metrics-table thead th {
+            border: none;
+            padding: 22px 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .metrics-table thead th:nth-child(1) {
+            width: 15%;
+            min-width: 150px;
+        }
+
+        .metrics-table thead th:nth-child(2) {
+            width: 20%;
+            min-width: 180px;
+        }
+
+        .metrics-table thead th:nth-child(3) {
+            width: 15%;
+            min-width: 160px;
+        }
+
+        .metrics-table thead th:nth-child(4) {
+            width: 12%;
+            min-width: 120px;
+        }
+
+        .metrics-table thead th:nth-child(5) {
+            width: 38%;
+        }
+
+        .metrics-table thead th:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .metrics-table thead th i {
+            margin-left: 5px;
+            font-size: 0.7rem;
+        }
+
+        .metrics-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .metrics-table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .metrics-table td {
+            padding: 15px;
+            vertical-align: middle;
+            height: 60px;
+        }
+
+        .metrics-table tbody tr {
+            height: 60px;
+        }
+
+        .metrics-table td small {
+            display: inline-block;
+            line-height: 1.4;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: #212529;
+            line-height: 1.5;
+        }
+
+        .metric-name {
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            min-height: 28px;
+        }
+
+        .tool-badge.sonarqube {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .tool-badge.sourcemeter {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .tool-badge.checkstyle {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .pagination-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard-container {
+                padding: 20px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .metrics-table {
+                font-size: 0.85rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .dashboard-container {
+                padding: 15px;
+            }
+
+            .dashboard-header {
+                padding: 15px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card .number {
+                font-size: 2rem;
+            }
+
+            .filters-section {
+                padding: 15px;
+            }
+
+            .pagination-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-header">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h5 class="mb-0" style="color: white;">Vista general de todos los proyectos analizados</h5>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Proyectos</div>
+                    <div class="number">{{ total_projects }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Métricas Totales</div>
+                    <div class="number">{{ total_measures }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Herramientas</div>
+                    <div class="number">{{ total_tools }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Último Análisis</div>
+                    <div class="number" style="font-size: 1.2rem;">
+                        {% if last_analysis %}
+                            {{ last_analysis|date:"d/m/Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filters-section">
+                <h5 class="mb-3">🔍 Filtros</h5>
+                <div class="row">
+                    <div class="col-md-3 filter-group">
+                        <label for="filterSearch">Búsqueda General</label>
+                        <input type="text" id="filterSearch" class="form-control filter-input"
+                               placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-3 filter-group">
+                        <label for="filterProject">Proyecto</label>
+                        <select id="filterProject" class="form-select filter-input">
+                            <option value="">Todos los proyectos</option>
+                            {% for project in projects %}
+                            <option value="{{ project.name }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 filter-group">
+                        <label for="filterMetric">Métrica</label>
+                        <select id="filterMetric" class="form-select filter-input">
+                            <option value="">Todas las métricas</option>
+                            {% for metric in metrics %}
+                            <option value="{{ metric.name }}">{{ metric.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 filter-group">
+                        <label for="filterTool">Herramienta</label>
+                        <select id="filterTool" class="form-select filter-input">
+                            <option value="">Todas las herramientas</option>
+                            {% for tool in tools %}
+                            <option value="{{ tool }}">{{ tool }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12 d-flex gap-2">
+                        <button class="btn btn-reset" onclick="resetFilters()">
+                            🔄 Limpiar Filtros
+                        </button>
+                        <button class="btn btn-export" onclick="exportToCSV()">
+                            📥 Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Métricas -->
+            <div class="table-container">
+                <table class="table metrics-table" id="metricsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Proyecto <i>▼</i></th>
+                            <th onclick="sortTable(1)">Métrica <i>▼</i></th>
+                            <th onclick="sortTable(2)">Herramienta <i>▼</i></th>
+                            <th onclick="sortTable(3)">Valor <i>▼</i></th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for measure in measures %}
+                        <tr data-project="{{ measure.project_name }}"
+                            data-metric="{{ measure.metric_name }}"
+                            data-tool="{{ measure.tool }}">
+                            <td class="project-name">{{ measure.project_name }}</td>
+                            <td class="metric-name">{{ measure.metric_name }}</td>
+                            <td>
+                                <span class="tool-badge {{ measure.tool|lower }}">
+                                    {{ measure.tool }}
+                                </span>
+                            </td>
+                            <td class="metric-value">{{ measure.value }}</td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ measure.description|default:"—"|truncatewords:10 }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="no-results">
+                                    <div>📊</div>
+                                    <h4>No hay métricas disponibles</h4>
+                                    <p>Importa proyectos para ver sus métricas aquí</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Paginación Info -->
+                <div class="pagination-info">
+                    <span id="showingInfo">Mostrando <strong id="visibleRows">0</strong> de <strong id="totalRows">{{ measures|length }}</strong> registros</span>
+                    <span id="filteredInfo" style="display: none;">
+                        (filtrado de <strong>{{ measures|length }}</strong> registros totales)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Botón de Volver -->
+            <div class="text-center mt-4">
+                <a href="{% url 'main:importarProyecto' %}" class="btn back-button">
+                    ⬅ Volver a Importar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Filtrado de tabla
+        function filterTable() {
+            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            const projectFilter = document.getElementById('filterProject').value.toLowerCase();
+            const metricFilter = document.getElementById('filterMetric').value.toLowerCase();
+            const toolFilter = document.getElementById('filterTool').value.toLowerCase();
+
+            const tbody = document.getElementById('tableBody');
+            const rows = tbody.getElementsByTagName('tr');
+            let visibleCount = 0;
+
+            for (let row of rows) {
+                const project = row.getAttribute('data-project')?.toLowerCase() || '';
+                const metric = row.getAttribute('data-metric')?.toLowerCase() || '';
+                const tool = row.getAttribute('data-tool')?.toLowerCase() || '';
+                const text = row.textContent.toLowerCase();
+
+                const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+                const matchesProject = projectFilter === '' || project.includes(projectFilter);
+                const matchesMetric = metricFilter === '' || metric.includes(metricFilter);
+                const matchesTool = toolFilter === '' || tool.includes(toolFilter);
+
+                if (matchesSearch && matchesProject && matchesMetric && matchesTool) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            // Actualizar info de paginación
+            document.getElementById('visibleRows').textContent = visibleCount;
+            const totalRows = rows.length;
+            document.getElementById('totalRows').textContent = totalRows;
+
+            // Mostrar info de filtrado si hay filtros activos
+            const hasFilters = searchTerm || projectFilter || metricFilter || toolFilter;
+            document.getElementById('filteredInfo').style.display = hasFilters ? 'inline' : 'none';
+        }
+
+        // Resetear filtros
+        function resetFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterProject').value = '';
+            document.getElementById('filterMetric').value = '';
+            document.getElementById('filterTool').value = '';
+            filterTable();
+        }
+
+        // Ordenar tabla
+        let sortDirection = {};
+        function sortTable(columnIndex) {
+            const table = document.getElementById('metricsTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
+
+            // Toggle sort direction
+            sortDirection[columnIndex] = !sortDirection[columnIndex];
+            const ascending = sortDirection[columnIndex];
+
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+
+                // Try to parse as number
+                const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
+
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return ascending ? aNum - bNum : bNum - aNum;
+                } else {
+                    return ascending
+                        ? aValue.localeCompare(bValue)
+                        : bValue.localeCompare(aValue);
+                }
+            });
+
+            // Re-append rows in sorted order
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Update sort indicators
+            const headers = table.querySelectorAll('thead th');
+            headers.forEach((header, index) => {
+                const icon = header.querySelector('i');
+                if (icon) {
+                    if (index === columnIndex) {
+                        icon.textContent = ascending ? '▲' : '▼';
+                    } else {
+                        icon.textContent = '▼';
+                    }
+                }
+            });
+        }
+
+        // Exportar a CSV
+        function exportToCSV() {
+            const table = document.getElementById('metricsTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+
+            let csv = 'Proyecto,Métrica,Herramienta,Valor,Descripción\n';
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = Array.from(cells).map(cell => {
+                    let text = cell.textContent.trim();
+                    // Escape quotes and wrap in quotes if contains comma
+                    text = text.replace(/"/g, '""');
+                    if (text.includes(',')) {
+                        text = `"${text}"`;
+                    }
+                    return text;
+                });
+                csv += rowData.join(',') + '\n';
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `metricas_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event listeners para filtros
+        document.getElementById('filterSearch').addEventListener('input', filterTable);
+        document.getElementById('filterProject').addEventListener('change', filterTable);
+        document.getElementById('filterMetric').addEventListener('change', filterTable);
+        document.getElementById('filterTool').addEventListener('change', filterTable);
+
+        // Inicializar contador
+        document.addEventListener('DOMContentLoaded', function() {
+            const totalRows = document.querySelectorAll('#tableBody tr').length;
+            document.getElementById('visibleRows').textContent = totalRows;
+            document.getElementById('totalRows').textContent = totalRows;
+        });
+    </script>
+</body>
+</html>

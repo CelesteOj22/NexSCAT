@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resumen del Análisis</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .hero-header {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            color: #000;
+        }
+
+        .summary-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-card.success .number {
+            color: #28a745;
+        }
+
+        .stat-card.error .number {
+            color: #dc3545;
+        }
+
+        .stat-card.total .number {
+            color: #667eea;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .project-card.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .project-card.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .project-info h5 {
+            margin-bottom: 5px;
+            color: #212529;
+        }
+
+        .project-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .status-badge.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .view-details-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .view-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                padding: 20px;
+            }
+
+            .project-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .project-status {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-header">
+        <div class="results-container">
+            <div class="summary-header">
+                <h1>✅ Análisis Completado</h1>
+                <p class="mb-0">{{ path }}</p>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div>📊 Total</div>
+                    <div class="number">{{ total }}</div>
+                    <small>proyectos</small>
+                </div>
+                <div class="stat-card success">
+                    <div>✅ Exitosos</div>
+                    <div class="number">{{ exitosos }}</div>
+                    <small>analizados</small>
+                </div>
+                <div class="stat-card error">
+                    <div>❌ Fallidos</div>
+                    <div class="number">{{ fallidos }}</div>
+                    <small>con errores</small>
+                </div>
+            </div>
+
+            <!-- Lista de Proyectos -->
+            <h4 class="mb-3">Proyectos Analizados:</h4>
+            {% for proyecto in proyectos %}
+            <div class="project-card {{ proyecto.status }}">
+                <div class="project-info">
+                    <h5>{{ proyecto.nombre }}</h5>
+                    <small class="text-muted">{{ proyecto.mensaje }}</small>
+                </div>
+                <div class="project-status">
+                    <span class="status-badge {{ proyecto.status }}">
+                        {% if proyecto.status == 'success' %}
+                            ✓ Exitoso
+                        {% else %}
+                            ✗ Error
+                        {% endif %}
+                    </span>
+                    {% if proyecto.project_id %}
+                    <a href="{% url 'main:verResultados' proyecto.project_id %}"
+                       class="view-details-btn">
+                        Ver Detalles →
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Botón de Volver -->
+            <div class="text-center mt-4">
+                <a href="{% url 'main:importarProyecto' %}" class="btn back-button">
+                    ⬅ Analizar Más Proyectos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -583,16 +583,13 @@ class SonarQube(IHerramienta, ABC):
         """
         try:
             url = f"{self._hosturl}/api/system/health"
-
             if token:
                 response = requests.get(url, auth=(token, ""))
             else:
                 response = requests.get(url)
-
             if response.status_code == 200:
                 data = response.json()
                 health = data.get("health", "").upper()
-
                 if health == "GREEN":
                     return True
                 else:
@@ -601,7 +598,6 @@ class SonarQube(IHerramienta, ABC):
             else:
                 logger.warning(f"SonarQube returned status {response.status_code}")
                 return False
-
         except requests.RequestException as e:
             logger.error(f"No se pudo contactar SonarQube: {e}")
             return False

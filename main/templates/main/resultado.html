@@ -1,75 +1,523 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Resultados del Análisis</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Resultados del Análisis - {{ project.name }}</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .hero-header {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 0 auto;
+            max-width: 1200px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            color: #000;
+            position: relative;
+            z-index: 1;
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .project-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .project-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        .project-info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 25px;
+        }
+
+        .nav-tabs .nav-link {
+            color: #495057;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border-color: transparent;
+            color: #667eea;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            background-color: transparent;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
+        .metrics-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .metrics-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding: 12px;
+        }
+
+        .metrics-table td {
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+        .metrics-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .metric-name {
+            font-weight: 500;
+            color: #212529;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .tool-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tool-badge.sonarqube {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .tool-badge.sourcemeter {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .tool-badge.checkstyle {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            border-radius: 25px;
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+
+        .component-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .component-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .component-path {
+            font-weight: 600;
+            color: #212529;
+            flex: 1;
+        }
+
+        .component-qualifier {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .qualifier-fil {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .qualifier-dir {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .results-container {
+                padding: 20px;
+                border-radius: 12px;
+            }
+
+            .project-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .project-info {
+                font-size: 0.8rem;
+            }
+
+            .nav-tabs .nav-link {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .metrics-table {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .results-container {
+                padding: 15px;
+            }
+
+            .project-header {
+                padding: 15px;
+            }
+
+            .component-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
-
-<div class="container py-5">
-    <h1 class="mb-4 text-center">📊 Resultados del Análisis</h1>
-
-    <!-- Resultados SonarQube -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
-            SonarQube
-        </div>
-        <div class="card-body">
-            {% if resultados.sonar %}
-                <table class="table table-striped">
-                    <tbody>
-                        <tr>
-                            <th scope="row">Estado</th>
-                            <td class="text-success">{{ resultados.sonar }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            {% elif resultados.sonar_error %}
-                <div class="alert alert-danger">
-                    <strong>Error:</strong> {{ resultados.sonar_error }}
+<body>
+    <div class="hero-header">
+        <div class="results-container">
+            <!-- Header del Proyecto -->
+            <div class="project-header">
+                <h1>📊 {{ project.name }}</h1>
+                <div class="project-info">
+                    <div class="project-info-item">
+                        <span>🔑</span>
+                        <span>{{ project.key }}</span>
+                    </div>
+                    {% if project.last_analysis_sq %}
+                    <div class="project-info-item">
+                        <span>🕒</span>
+                        <span>Último análisis: {{ project.last_analysis_sq|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="project-info-item">
+                        <span>📁</span>
+                        <span>{{ project.path }}</span>
+                    </div>
                 </div>
-            {% else %}
-                <p class="text-muted">No se encontraron resultados de SonarQube.</p>
-            {% endif %}
-        </div>
-    </div>
+            </div>
 
-    <!-- Resultados SourceMeter -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-success text-white">
-            SourceMeter
-        </div>
-        <div class="card-body">
-            {% if resultados.sourcemeter %}
-                <table class="table table-striped">
-                    <tbody>
-                        <tr>
-                            <th scope="row">Estado</th>
-                            <td class="text-success">{{ resultados.sourcemeter }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            {% elif resultados.sourcemeter_error %}
-                <div class="alert alert-danger">
-                    <strong>Error:</strong> {{ resultados.sourcemeter_error }}
+            <!-- Tabs de Navegación -->
+            <ul class="nav nav-tabs" id="metricsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="project-tab" data-bs-toggle="tab"
+                            data-bs-target="#project-metrics" type="button" role="tab">
+                        🎯 Métricas del Proyecto
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="components-tab" data-bs-toggle="tab"
+                            data-bs-target="#components-metrics" type="button" role="tab">
+                        📦 Componentes
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="classes-tab" data-bs-toggle="tab"
+                            data-bs-target="#classes-metrics" type="button" role="tab">
+                        🎓 Clases
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Contenido de los Tabs -->
+            <div class="tab-content" id="metricsTabContent">
+
+                <!-- Tab 1: Métricas del Proyecto -->
+                <div class="tab-pane fade show active" id="project-metrics" role="tabpanel">
+                    <div class="search-box">
+                        <input type="text" class="form-control" id="searchProject"
+                               placeholder="🔍 Buscar métrica...">
+                    </div>
+
+                    {% if project_measures %}
+                    <div class="table-responsive">
+                        <table class="table metrics-table" id="projectMetricsTable">
+                            <thead>
+                                <tr>
+                                    <th>Métrica</th>
+                                    <th>Herramienta</th>
+                                    <th>Valor</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for measure in project_measures %}
+                                <tr>
+                                    <td class="metric-name">{{ measure.id_metric.name }}</td>
+                                    <td>
+                                        <span class="tool-badge {{ measure.id_metric.tool|lower }}">
+                                            {{ measure.id_metric.tool }}
+                                        </span>
+                                    </td>
+                                    <td class="metric-value">{{ measure.value }}</td>
+                                    <td>
+                                        <small class="text-muted">{{ measure.id_metric.description|default:"—" }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div>📊</div>
+                        <h4>No hay métricas disponibles</h4>
+                        <p>No se encontraron métricas a nivel de proyecto.</p>
+                    </div>
+                    {% endif %}
                 </div>
-            {% else %}
-                <p class="text-muted">No se encontraron resultados de SourceMeter.</p>
-            {% endif %}
+
+                <!-- Tab 2: Componentes -->
+                <div class="tab-pane fade" id="components-metrics" role="tabpanel">
+                    <div class="search-box">
+                        <input type="text" class="form-control" id="searchComponents"
+                               placeholder="🔍 Buscar componente...">
+                    </div>
+
+                    {% if components %}
+                    <div id="componentsList">
+                        {% for component in components %}
+                        <div class="component-item" data-path="{{ component.path|lower }}">
+                            <div class="component-header" data-bs-toggle="collapse"
+                                 data-bs-target="#component-{{ forloop.counter }}">
+                                <span class="component-path">{{ component.path }}</span>
+                                <span class="component-qualifier qualifier-{{ component.qualifier|lower }}">
+                                    {{ component.qualifier }}
+                                </span>
+                            </div>
+
+                            <div class="collapse" id="component-{{ forloop.counter }}">
+                                {% if component.measures %}
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Métrica</th>
+                                                <th>Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for measure in component.measures %}
+                                            <tr>
+                                                <td>{{ measure.id_metric.name }}</td>
+                                                <td><strong>{{ measure.value }}</strong></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>No hay métricas disponibles para este componente</small>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div>📦</div>
+                        <h4>No hay componentes disponibles</h4>
+                        <p>No se encontraron componentes analizados.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tab 3: Clases -->
+                <div class="tab-pane fade" id="classes-metrics" role="tabpanel">
+                    <div class="search-box">
+                        <input type="text" class="form-control" id="searchClasses"
+                               placeholder="🔍 Buscar clase...">
+                    </div>
+
+                    {% if classes %}
+                    <div id="classesList">
+                        {% for class_obj in classes %}
+                        <div class="component-item" data-name="{{ class_obj.name|lower }}">
+                            <div class="component-header" data-bs-toggle="collapse"
+                                 data-bs-target="#class-{{ forloop.counter }}">
+                                <span class="component-path">{{ class_obj.name }}</span>
+                            </div>
+
+                            <div class="collapse" id="class-{{ forloop.counter }}">
+                                {% if class_obj.measures %}
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Métrica</th>
+                                                <th>Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for measure in class_obj.measures %}
+                                            <tr>
+                                                <td>{{ measure.id_metric.name }}</td>
+                                                <td><strong>{{ measure.value }}</strong></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>No hay métricas disponibles para esta clase</small>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div>🎓</div>
+                        <h4>No hay clases disponibles</h4>
+                        <p>No se encontraron clases analizadas.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botón de Volver -->
+            <div class="text-center mt-4">
+                <a href="{% url 'main:importarProyecto' %}" class="btn back-button">
+                    ⬅ Volver a Importar
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- Botón volver -->
-    <div class="text-center">
-        <a href="{% url 'main:importarProyecto' %}" class="btn btn-outline-secondary">
-            ⬅ Volver a Importar Proyecto
-        </a>
-    </div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Búsqueda en métricas del proyecto
+        document.getElementById('searchProject')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#projectMetricsTable tbody tr');
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Búsqueda en componentes
+        document.getElementById('searchComponents')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('#componentsList .component-item');
+
+            items.forEach(item => {
+                const path = item.getAttribute('data-path');
+                item.style.display = path.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Búsqueda en clases
+        document.getElementById('searchClasses')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('#classesList .component-item');
+
+            items.forEach(item => {
+                const name = item.getAttribute('data-name');
+                item.style.display = name.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>

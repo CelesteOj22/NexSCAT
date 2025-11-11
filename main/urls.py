@@ -27,4 +27,6 @@ urlpatterns = [
     path("importarProyecto/", views.importarProyecto, name="importarProyecto"),
     path("logout/", auth_views.LogoutView.as_view(next_page='main:home'), name='logout'),
     path("configurarToken/", views.configurarToken, name="configurarToken"),
+    path('proyecto/<int:project_id>/resultados/', views.ver_resultados, name='verResultados'),
+    path('dashboardAnalisis/', views.dashboardAnalisis, name='dashboardAnalisis'),
 ]
