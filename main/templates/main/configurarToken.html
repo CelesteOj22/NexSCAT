@@ -1,26 +1,176 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Configurar Token SonarQube</title>
-</head>
-<body>
-    <h1>Configurar Token</h1>
+<!-- templates/main/configurarToken.html -->
+{% extends 'main/base.html' %}
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Guardar</button>
-    </form>
+{% block title %}Configurar Token - NexScat{% endblock %}
 
-    {% if form.errors %}
-        <ul>
-            {% for field in form %}
-                {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            {% endfor %}
-        </ul>
-    {% endif %}
-</body>
-</html>
+{% block extra_css %}
+<style>
+    /* Usar flexbox para centrar con más espacio arriba */
+    .token-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 90px - 300px);
+        padding: 80px 20px 40px; /* ← MÁS padding arriba */
+    }
 
+    .token-container {
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        width: 100%;
+        max-width: 700px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .token-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .token-header h2 {
+        color: #212529;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #1976d2;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+
+    .info-box i {
+        color: #1976d2;
+        margin-right: 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 40px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    /* Responsive - Tablets */
+    @media (max-width: 768px) {
+        .token-section {
+            min-height: calc(100vh - 90px - 250px);
+            padding: 60px 15px 30px; /* ← Padding ajustado */
+        }
+
+        .token-container {
+            padding: 30px 20px;
+            max-width: 100%;
+        }
+
+        .token-header h2 {
+            font-size: 1.5rem;
+        }
+    }
+
+    /* Responsive - Móviles */
+    @media (max-width: 480px) {
+        .token-section {
+            min-height: calc(100vh - 90px - 200px);
+            padding: 40px 10px 20px; /* ← Padding ajustado */
+        }
+
+        .token-container {
+            padding: 25px 15px;
+            border-radius: 12px;
+        }
+
+        .token-header h2 {
+            font-size: 1.3rem;
+        }
+
+        .info-box {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Para pantallas muy grandes */
+    @media (min-width: 1400px) {
+        .token-section {
+            min-height: calc(100vh - 90px - 350px);
+            padding: 100px 20px 40px; /* ← Más padding para pantallas grandes */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="token-section">
+    <div class="token-container">
+        <div class="token-header">
+            <h2>🔐 Configurar Token SonarQube</h2>
+            <p class="text-muted">Token de autenticación para acceder al servidor SonarQube</p>
+        </div>
+
+        <div class="info-box">
+            <i class="bi bi-info-circle-fill"></i>
+            <strong>¿Cómo obtener tu token?</strong><br>
+            <small>
+                1. Accede a tu servidor SonarQube<br>
+                2. Ve a: Mi Cuenta → Seguridad → Generar Tokens<br>
+                3. Copia el token generado y pégalo aquí
+            </small>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="{{ form.token.id_for_label }}" class="form-label">
+                    Token de SonarQube
+                </label>
+                {{ form.token }}
+                {% if form.token.help_text %}
+                    <div class="form-text">{{ form.token.help_text }}</div>
+                {% endif %}
+                {% if form.token.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.token.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-save">
+                    <i class="bi bi-save"></i> Guardar Token
+                </button>
+                <a href="{% url 'main:home' %}" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,326 @@
+<!-- templates/main/estado_herramientas.html -->
+{% extends 'main/base.html' %}
+
+{% block title %}Estado de Herramientas - NexScat{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Agregar background con gradiente igual que Index.html */
+    .status-section {
+        background: rgba(255, 255, 255, 0.95);
+        min-height: calc(100vh - 90px);
+        padding: 60px 0;
+    }
+
+    /* Ajustar el header para que se vea bien sobre el gradiente */
+    .page-header {
+        background: rgba(255, 255, 255, 0.95);
+        color: #212529;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .page-header p {
+        color: #495057;
+    }
+
+    .status-section {
+        padding: 60px 0;
+    }
+
+    .status-card {
+        border-radius: 16px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        background: white;
+        margin-bottom: 20px;
+    }
+
+    .status-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 10px;
+        animation: pulse 2s infinite;
+    }
+
+    .status-disponible {
+        background-color: #28a745;
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    }
+
+    .status-no-disponible {
+        background-color: #dc3545;
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+
+    .status-warning {
+        background-color: #ffc107;
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .tool-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .refresh-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: white;
+    }
+    .page-header p {
+        color: white;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-item {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="status-section">
+    <div class="container">
+        <div class="page-header">
+            <h1>
+                <i class="bi bi-hdd-network"></i>
+                Estado de Herramientas
+            </h1>
+            <p class="mb-0">
+                Verificación del estado de las herramientas de análisis estático de código
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- SonarQube Status Card -->
+            <div class="col-md-6">
+                <div class="card status-card h-100">
+                    <div class="card-body text-center">
+                        <div class="tool-icon text-primary">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <h3 class="card-title">{{ sonar_status.nombre }}</h3>
+
+                        <div class="my-4">
+                            {% if sonar_status.token_configurado %}
+                                {% if sonar_status.disponible %}
+                                    <span class="status-indicator status-disponible"></span>
+                                    <h4 class="text-success d-inline">Disponible</h4>
+                                {% else %}
+                                    <span class="status-indicator status-no-disponible"></span>
+                                    <h4 class="text-danger d-inline">No Disponible</h4>
+                                {% endif %}
+                            {% else %}
+                                <span class="status-indicator status-warning"></span>
+                                <h4 class="text-warning d-inline">Token No Configurado</h4>
+                            {% endif %}
+                        </div>
+
+                        <p class="card-text text-muted">
+                            {{ sonar_status.mensaje }}
+                        </p>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-around mt-3">
+                            <div>
+                                <small class="text-muted">Requiere Token</small><br>
+                                <span class="badge bg-info">Sí</span>
+                            </div>
+                            <div>
+                                <small class="text-muted">Tipo</small><br>
+                                <span class="badge bg-secondary">API REST</span>
+                            </div>
+                        </div>
+
+                        {% if not sonar_status.token_configurado %}
+                            <div class="mt-4">
+                                <a href="{% url 'main:configurarToken' %}" class="btn btn-primary-gradient">
+                                    <i class="bi bi-gear"></i>
+                                    Configurar Token
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SourceMeter Status Card -->
+            <div class="col-md-6">
+                <div class="card status-card h-100">
+                    <div class="card-body text-center">
+                        <div class="tool-icon text-success">
+                            <i class="bi bi-file-earmark-code"></i>
+                        </div>
+                        <h3 class="card-title">{{ sourcemeter_status.nombre }}</h3>
+
+                        <div class="my-4">
+                            {% if sourcemeter_status.disponible %}
+                                <span class="status-indicator status-disponible"></span>
+                                <h4 class="text-success d-inline">Disponible</h4>
+                            {% else %}
+                                <span class="status-indicator status-no-disponible"></span>
+                                <h4 class="text-danger d-inline">No Disponible</h4>
+                            {% endif %}
+                        </div>
+
+                        <p class="card-text text-muted">
+                            {{ sourcemeter_status.mensaje }}
+                        </p>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-around mt-3">
+                            <div>
+                                <small class="text-muted">Requiere Token</small><br>
+                                <span class="badge bg-info">No</span>
+                            </div>
+                            <div>
+                                <small class="text-muted">Tipo</small><br>
+                                <span class="badge bg-secondary">Ejecutable Local</span>
+                            </div>
+                        </div>
+
+                        {% if not sourcemeter_status.disponible %}
+                            <div class="mt-4">
+                                <div class="alert alert-warning">
+                                    <small>
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Verifique que SourceMeter esté instalado y en el PATH del sistema
+                                    </small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="summary-card">
+                    <h5 class="mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        Resumen del Sistema
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h2>
+                                {% if sonar_status.disponible and sourcemeter_status.disponible %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% elif sonar_status.disponible or sourcemeter_status.disponible %}
+                                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted">Estado General</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h2>
+                                {% if sonar_status.disponible %}1{% else %}0{% endif %} +
+                                {% if sourcemeter_status.disponible %}1{% else %}0{% endif %}
+                            </h2>
+                            <p class="text-muted">Herramientas Disponibles</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h2>
+                                {% if sonar_status.disponible and sourcemeter_status.disponible %}
+                                    <span class="text-success">Listo</span>
+                                {% else %}
+                                    <span class="text-warning">Config. Requerida</span>
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted">Capacidad de Análisis</p>
+                        </div>
+                    </div>
+
+                    {% if sonar_status.disponible and sourcemeter_status.disponible %}
+                        <div class="alert alert-success mt-3 text-center">
+                            <i class="bi bi-check-circle"></i>
+                            Todas las herramientas están disponibles. El sistema está listo para realizar análisis.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mt-3 text-center">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Algunas herramientas no están disponibles. Complete la configuración para habilitar todas las funcionalidades.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón flotante de refresh -->
+<a href="{% url 'main:estado_herramientas' %}" class="btn refresh-btn" title="Actualizar estado">
+    <i class="bi bi-arrow-clockwise fs-4"></i>
+</a>
+
+{% endblock %}

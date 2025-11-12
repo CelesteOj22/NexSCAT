@@ -29,4 +29,5 @@ urlpatterns = [
     path("configurarToken/", views.configurarToken, name="configurarToken"),
     path('proyecto/<int:project_id>/resultados/', views.ver_resultados, name='verResultados'),
     path('dashboardAnalisis/', views.dashboardAnalisis, name='dashboardAnalisis'),
+    path('estado/', views.estado_herramientas, name='estado_herramientas'),
 ]

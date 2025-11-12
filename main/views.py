@@ -37,6 +37,66 @@ def login(request):
 """
 
 
+@login_required
+def estado_herramientas(request):
+    """
+    Vista para verificar el estado de las herramientas de análisis
+    """
+    # Obtener token del usuario
+    token_obj = None
+    token = None
+    try:
+        token_obj = SonarToken.objects.get(user=request.user)
+        token = token_obj.token if token_obj.token else None
+    except SonarToken.DoesNotExist:
+        pass
+
+    # Verificar estado de SonarQube
+    sonar_status = {
+        'nombre': 'SonarQube',
+        'disponible': False,
+        'mensaje': '',
+        'requiere_token': True,
+        'token_configurado': bool(token)
+    }
+
+    if token:
+        try:
+            sonar_status['disponible'] = sonar.is_up(token)
+            if sonar_status['disponible']:
+                sonar_status['mensaje'] = 'Servidor disponible y funcionando correctamente'
+            else:
+                sonar_status['mensaje'] = 'Servidor no disponible o con problemas'
+        except Exception as e:
+            sonar_status['mensaje'] = f'Error al verificar: {str(e)}'
+    else:
+        sonar_status['mensaje'] = 'Token no configurado. Configure su token para verificar el estado.'
+
+    # Verificar estado de SourceMeter
+    sourcemeter_status = {
+        'nombre': 'SourceMeter',
+        'disponible': False,
+        'mensaje': '',
+        'requiere_token': False
+    }
+
+    try:
+        sourcemeter_status['disponible'] = source.is_up()
+        if sourcemeter_status['disponible']:
+            sourcemeter_status['mensaje'] = 'Herramienta disponible en el sistema'
+        else:
+            sourcemeter_status['mensaje'] = 'Herramienta no encontrada en el PATH del sistema'
+    except Exception as e:
+        sourcemeter_status['mensaje'] = f'Error al verificar: {str(e)}'
+
+    context = {
+        'sonar_status': sonar_status,
+        'sourcemeter_status': sourcemeter_status,
+    }
+
+    return render(request, 'main/estado_herramientas.html', context)
+
+
 def token_required(view_func):
     def wrapper(request, *args, **kwargs):
         try:
@@ -128,6 +188,7 @@ def importarProyecto(request):
 
     return render(request, 'main/importarProyecto.html')
 
+
 def analizarProyectos(proyecto_path, usu_logueado):
     try:
         project_name = pathlib.Path(proyecto_path).name
@@ -216,6 +277,7 @@ def analizarProyectos(proyecto_path, usu_logueado):
         print(f"❌ Error general en analizarProyectos({proyecto_path}): {e}")
         raise
 
+
 @login_required
 def configurarToken(request):
     token_obj, _ = SonarToken.objects.get_or_create(user=request.user)
@@ -286,6 +348,7 @@ def dashboardAnalisis(request):
 
     return render(request, 'main/dashboardAnalisis.html', context)
 
+
 @login_required
 def ver_resultados(request, project_id):
     """
@@ -336,4 +399,3 @@ def ver_resultados(request, project_id):
     }
 
     return render(request, 'main/resultados.html', context)
-

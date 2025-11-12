@@ -151,7 +151,7 @@ h6,
     font-family: 'Jost', sans-serif;
     font-size: 18px;
     font-weight: 500;
-    color: var(--light) !important;
+    color: var(--dark) !important;  /* ← OSCURO por defecto en lugar de blanco */
     outline: none;
     transition: .5s;
 }
@@ -165,7 +165,7 @@ h6,
     left: 50%;
     transform: translateX(-50%);
     border: 10px solid;
-    border-color: var(--light) transparent transparent transparent;
+    border-color: var(--primary) transparent transparent transparent;  /* ← Cambiar a primary */
     transition: .5s;
 }
 
@@ -180,7 +180,7 @@ h6,
 }
 
 .navbar-light .navbar-brand h1 {
-    color: #FFFFFF;
+    color: var(--primary);  /* ← Color primary en lugar de blanco */
 }
 
 .navbar-light .navbar-brand img {
@@ -190,6 +190,34 @@ h6,
 
 .sticky-top.navbar-light .navbar-brand img {
     max-height: 45px;
+}
+
+/* ============================================
+   ESTILOS ESPECIALES PARA HOME PAGE
+   ============================================ */
+body.home-page .navbar-light .navbar-nav .nav-link {
+    color: var(--light) !important;  /* ← Blanco solo en home */
+}
+
+body.home-page .navbar-light .navbar-nav .nav-link::before {
+    border-color: var(--light) transparent transparent transparent;
+}
+
+body.home-page .navbar-light .navbar-brand h1 {
+    color: #FFFFFF;
+}
+
+/* Cuando hace scroll en home, volver a oscuro */
+body.home-page .sticky-top.navbar-light .navbar-nav .nav-link {
+    color: var(--dark) !important;
+}
+
+body.home-page .sticky-top.navbar-light .navbar-nav .nav-link::before {
+    border-color: var(--primary) transparent transparent transparent;
+}
+
+body.home-page .sticky-top.navbar-light .navbar-brand h1 {
+    color: var(--primary);
 }
 
 @media (max-width: 991.98px) {
@@ -231,17 +259,32 @@ h6,
 }
 
 @media (min-width: 992px) {
+    /* Por defecto el navbar es fijo con fondo blanco */
     .navbar-light {
-        position: absolute;
+        position: fixed;  /* ← Cambiar de absolute a fixed */
         width: 100%;
         top: 0;
         left: 0;
         z-index: 999;
+        background: rgba(255, 255, 255, 0.95) !important;  /* ← Fondo blanco por defecto */
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
-    
-    .sticky-top.navbar-light {
+
+    /* Solo en home page, navbar transparente */
+    body.home-page .navbar-light {
+        position: absolute;  /* ← Absolute solo en home */
+        background: transparent !important;
+        backdrop-filter: none;
+        box-shadow: none;
+    }
+
+    /* Cuando hace scroll en home, navbar blanco */
+    body.home-page .sticky-top.navbar-light {
         position: fixed;
-        background: #FFFFFF;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
 
     .sticky-top.navbar-light .navbar-nav .nav-link::before {
