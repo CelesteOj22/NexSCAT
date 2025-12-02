@@ -1,8 +1,12 @@
+#services/sourceMeter.py
 import shutil
 import subprocess
 import time
 import csv
 from pathlib import Path
+
+from django.conf import settings
+
 from .base import IHerramienta
 from django.utils import timezone
 from ..models import Project, Metric, ProjectMeasure, Component, ComponentMeasure, Class, ClassMeasure
@@ -357,5 +361,35 @@ class SourceMeter(IHerramienta):
         return True
 
     def is_up(self, token: str = None) -> bool:
-        """Verifica que SourceMeter esté disponible"""
-        return shutil.which("SourceMeterJava") is not None
+        """
+        Verifica que SourceMeter esté disponible
+        Busca primero en PATH, luego en la ruta configurada en settings.py
+        """
+        # 1. Intentar encontrar en PATH (si está como variable de entorno)
+        if shutil.which("SourceMeterJava") is not None:
+            print("✅ SourceMeter encontrado en PATH del sistema")
+            return True
+
+        # 2. Verificar la ruta configurada en settings.py
+        sourcemeter_path = getattr(settings, 'SOURCEMETER_PATH', None)
+
+        if sourcemeter_path:
+            # Convertir a Path para manejo multiplataforma
+            path_obj = Path(sourcemeter_path)
+
+            if path_obj.exists():
+                print(f"SourceMeter encontrado en: {sourcemeter_path}")
+                return True
+            else:
+                print(f"SourceMeter configurado pero no encontrado en: {sourcemeter_path}")
+        else:
+            print("SOURCEMETER_PATH no está configurado en settings.py")
+
+        # 3. No se encontró en ningún lado
+        print("SourceMeter no está disponible")
+        print("Sugerencias:")
+        print("- Agregar SourceMeter al PATH del sistema")
+        print("- Verificar la ruta en settings.py")
+        print("- Instalar SourceMeter si no está instalado")
+
+        return False

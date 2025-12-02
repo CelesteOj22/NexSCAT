@@ -5,19 +5,26 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 # para renderizar templates?
+from django.contrib.auth.models import User
 from django.db.models import Max
+from django.http import JsonResponse
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Metric, Project, SonarToken, Component, ProjectMeasure
 from main.services.factory import sonar, source
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
 from .forms import SonarTokenForm
-from .models import SonarToken
-
-# Create your views here.
 from .repository.projectRepository import update_project
-from .services.base import IHerramienta
+
+from .tasks import analizar_proyecto_completo, analizar_sonar, analizar_sourcemeter, test_celery
+from celery.result import AsyncResult
+
+import json
+from django.http import StreamingHttpResponse
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def homepage(request):
@@ -29,13 +36,6 @@ def homepage(request):
     # print(metrics1)  # Verifica los resultados en la consola
     # parametros de render(request,template,content/data)
     return render(request=request, template_name="main/Index.html", context={"metrics": Metric.objects.all})
-
-
-"""
-def login(request):
-    return render(request=request, template_name="registration/login.html")
-"""
-
 
 @login_required
 def estado_herramientas(request):
@@ -127,13 +127,18 @@ def login_view(request):
     return render(request, 'registration/login.html')
 
 
-# mi decorador va arriba de la definicion de la vista wuau
 @login_required
 @token_required
 def importarProyecto(request):
+    """
+    Vista adaptativa con soporte para AJAX y SSE
+    """
     if request.method == 'POST':
         path = request.POST.get('path')
+
         if not os.path.isdir(path):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'La ruta ingresada no es válida.'}, status=400)
             messages.error(request, 'La ruta ingresada no es válida.')
             return render(request, 'main/importarProyecto.html')
 
@@ -142,140 +147,296 @@ def importarProyecto(request):
         try:
             sonar.check_tool_status(sonar, usu_token.token)
         except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': str(e)}, status=400)
             messages.error(request, str(e))
             return render(request, 'main/importarProyecto.html')
 
         directorio = pathlib.Path(path)
-        print(f"Comenzando el análisis de {len(list(directorio.iterdir()))} proyecto/s")
+        proyectos = [p for p in directorio.iterdir() if p.is_dir()]
 
-        proyectos_exitosos = 0
-        proyectos_fallidos = 0
+        celery_disponible = is_celery_available()
 
-        for proyecto in directorio.iterdir():
-            if not proyecto.is_dir():
-                continue
+        if celery_disponible:
+            logger.info("Celery disponible - Ejecutando analisis ASINCRONO")
+            print("=" * 60)
+            print("MODO: ASINCRONO CON CELERY")
+            print("=" * 60)
 
-            try:
-                print(f"\n{'=' * 60}")
-                print(f"🚀 Analizando: {proyecto.name}")
-                print(f"{'=' * 60}")
+            result = _analizar_asincrono(request, proyectos, usu_token)
 
-                analizarProyectos(str(proyecto), request.user)
-                proyectos_exitosos += 1
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                task_ids = request.session.get('analysis_tasks', [])
+                return JsonResponse({'task_ids': task_ids, 'mode': 'async'})
 
-                print(f"✅ {proyecto.name} completado")
+            return result
+        else:
+            logger.info("Celery no disponible - Ejecutando analisis SINCRONO con SSE")
+            print("=" * 60)
+            print("MODO: SINCRONO (SIN CELERY) - USANDO SSE")
+            print("=" * 60)
 
-            except Exception as e:
-                print(f"❌ Error en {proyecto.name}: {str(e)}")
-                proyectos_fallidos += 1
+            # Guardar en sesión para SSE
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                request.session['analysis_path'] = path
+                request.session['analysis_user_id'] = request.user.id
+                request.session['analysis_token'] = usu_token.token
+                request.session.save()
 
-        # Mostrar mensaje de resumen
-        if proyectos_exitosos > 0:
-            messages.success(
-                request,
-                f"✅ Análisis completado: {proyectos_exitosos} proyectos exitosos"
-            )
+                return JsonResponse({'mode': 'sync', 'use_sse': True})
 
-        if proyectos_fallidos > 0:
-            messages.warning(
-                request,
-                f"⚠️ {proyectos_fallidos} proyectos con errores"
-            )
-
-        # Redirigir al dashboard
-        from django.shortcuts import redirect
-        return redirect('main:dashboardAnalisis')
+            result = _analizar_sincrono(request, proyectos, usu_token)
+            return result
 
     return render(request, 'main/importarProyecto.html')
 
 
-def analizarProyectos(proyecto_path, usu_logueado):
-    try:
-        project_name = pathlib.Path(proyecto_path).name
-        usu_token = SonarToken.objects.get(user=usu_logueado)
+def _analizar_asincrono(request, proyectos, usu_token):
+    """
+    Análisis asíncrono usando Celery
+    """
+    print(f"Comenzando el análisis de {len(proyectos)} proyecto/s usando Celery")
 
-        # 🔹 Normalizar projectKey con prefijo nexscat:
-        project_key = sonar.normalizar_project_key(project_name)
+    task_ids = []
 
-        # 🔹 Crear o recuperar el proyecto en la base de datos
-        project, created = Project.objects.get_or_create(
-            name=project_name,
-            defaults={
-                "path": proyecto_path,
-                "created_by": usu_logueado,
-                "created_at": timezone.now(),
-                "key": project_key
-            }
+    for proyecto in proyectos:
+        try:
+            print(f"🚀 Lanzando análisis asíncrono para: {proyecto.name}")
+
+            # Lanzar tarea de Celery
+            task = analizar_proyecto_completo.delay(
+                proyecto_path=str(proyecto),
+                usuario_id=request.user.id,
+                token=usu_token.token
+            )
+
+            task_ids.append({
+                'project_name': proyecto.name,
+                'task_id': task.id
+            })
+
+            print(f"✅ Tarea lanzada para {proyecto.name} (Task ID: {task.id})")
+
+        except Exception as e:
+            print(f"❌ Error lanzando tarea para {proyecto.name}: {str(e)}")
+            messages.error(request, f"Error en {proyecto.name}: {str(e)}")
+
+    if task_ids:
+        request.session['analysis_tasks'] = task_ids
+        messages.success(
+            request,
+            f"✅ {len(task_ids)} proyectos enviados para análisis en segundo plano (Celery)"
+        )
+        return redirect('main:monitorear_analisis')
+    else:
+        messages.error(request, "No se pudieron lanzar las tareas de análisis")
+        return render(request, 'main/importarProyecto.html')
+
+
+def _analizar_sincrono(request, proyectos, usu_token):
+    """
+    Análisis síncrono sin Celery
+    """
+    print(f"Comenzando el análisis de {len(proyectos)} proyecto/s de forma síncrona")
+
+    proyectos_exitosos = 0
+    proyectos_fallidos = 0
+    errores = []
+
+    for proyecto in proyectos:
+        try:
+            print(f"🔍 Analizando: {proyecto.name}")
+
+            # Importar la función de la tarea (sin .delay())
+            from .tasks import _analizar_proyecto_logica
+
+            # Llamar directamente a la lógica (sin Celery)
+            resultado = _analizar_proyecto_logica(
+                proyecto_path=str(proyecto),
+                usuario_id=request.user.id,
+                token=usu_token.token
+            )
+
+            if resultado.get('success'):
+                proyectos_exitosos += 1
+                print(f"✅ {proyecto.name} completado")
+            else:
+                proyectos_fallidos += 1
+                error_msg = resultado.get('error', 'Error desconocido')
+                print(f"❌ {proyecto.name} falló: {error_msg}")
+                errores.append(f"{proyecto.name}: {error_msg}")
+
+        except Exception as e:
+            proyectos_fallidos += 1
+            print(f"❌ Error en {proyecto.name}: {str(e)}")
+            errores.append(f"{proyecto.name}: {str(e)}")
+
+    # Mostrar resultados
+    if proyectos_exitosos > 0:
+        messages.success(
+            request,
+            f"✅ {proyectos_exitosos} proyecto(s) analizados correctamente (modo síncrono)"
         )
 
-        if not created:
-            print(f"📌 Proyecto {project_name} ya existía en la base")
-        else:
-            print(f"✅ Proyecto {project_name} creado en la base con key {project_key}")
+    if proyectos_fallidos > 0:
+        messages.warning(
+            request,
+            f"⚠️ {proyectos_fallidos} proyecto(s) fallaron"
+        )
 
-        resultados = {}
+        # Mostrar detalles de errores
+        for error in errores[:3]:  # Mostrar máximo 3 errores
+            messages.error(request, error)
 
-        # 🔹 Analizar con SonarQube
-        try:
-            # Analizar el proyecto
-            resultado_ok, mensaje = sonar.analizar(
-                settings.SONAR_SCANNER_PATH,
-                proyecto_path,
-                usu_token.token
-            )
-            resultados["sonar"] = mensaje
+    return redirect('main:dashboardAnalisis')
 
-            if resultado_ok:
-                try:
-                    # Procesar métricas a nivel PROYECTO (tu código actual)
-                    sonar.procesar_con_reintentos(project, usu_token.token, project_key)
+# 🔥 NUEVA VISTA: Monitorear progreso de análisis
+@login_required
+def monitorear_analisis(request):
+    """
+    Vista para monitorear el progreso de los análisis en Celery
+    """
+    task_data = request.session.get('analysis_tasks', [])
 
-                    # Procesar componentes (archivos y directorios)
-                    sonar.procesar_componentes(project, usu_token.token, project_key)
+    if not task_data:
+        messages.info(request, "No hay análisis en progreso")
+        return redirect('main:dashboardAnalisis')
 
-                    update_project(project_name, timezone.now(), "sq")
-                    resultados["sonar_metrics"] = "✅ Métricas procesadas exitosamente"
-                except Exception as e:
-                    print(f"❌ Error procesando métricas para {project_name}: {e}")
-                    resultados["sonar_metrics_error"] = f"Error: {str(e)}"
-            else:
-                print(f"❌ No se procesan métricas para {project_name} porque el análisis falló")
-                print("❌ Análisis falló, salida completa del scanner:")
-                print(mensaje)
+    context = {
+        'tasks': task_data
+    }
 
-        except Exception as e:
-            print(f"❌ Error en SonarQube para {project_name}: {e}")
-            resultados["sonar_error"] = str(e)
-        """
-        # 🔹 Analizar con SourceMeter
-        try:
-            resultado_ok, mensaje = source.analizar(
-                settings.SOURCEMETER_PATH,
-                proyecto_path,
-                project_name  # ← SIN normalizar (checkstyle-4.3)
-            )
-            resultados["sourcemeter"] = mensaje
-            if resultado_ok:
-                # ✅ PROCESAR DESPUÉS DE ANALIZAR
-                try:
-                    source.procesar(project, project_name)  # ← Pasar project_name, no project_key
-                    update_project(project_name, timezone.now(), "sm")
-                    resultados["sourcemeter_metrics"] = "✅ Métricas procesadas exitosamente"
-                except Exception as e:
-                    print(f"❌ Error procesando métricas para {project_name}: {e}")
-                    resultados["sourcemeter_metrics_error"] = f"Error: {str(e)}"
-            else:
-                print(f"❌ No se procesan métricas para {project_name} porque el análisis falló")
+    return render(request, 'main/monitorear_analisis.html', context)
 
-        except Exception as e:
-            print(f"❌ Error en SourceMeter para {project_name}: {e}")
-            resultados["sourcemeter_error"] = str(e)
-        """
-        return project
+
+@login_required
+def verificar_tarea(request, task_id):
+    """
+    API endpoint mejorado para verificar el estado con progreso detallado
+    """
+    task = AsyncResult(task_id)
+
+    response = {
+        'task_id': task_id,
+        'state': task.state,
+        'ready': task.ready(),
+        'successful': task.successful() if task.ready() else None,
+        'failed': task.failed() if task.ready() else None,
+    }
+
+    if task.state == 'PENDING':
+        response['status'] = 'Esperando en cola...'
+        response['progress'] = 0
+        response['current_step'] = 0
+        response['total_steps'] = 5
+
+    elif task.state == 'PROGRESS':
+        # 🔥 Estado personalizado con info detallada
+        info = task.info
+        response['status'] = info.get('status', 'Procesando...')
+        response['progress'] = info.get('percent', 0)
+        response['current_step'] = info.get('current_step', 0)
+        response['total_steps'] = info.get('total_steps', 5)
+
+    elif task.state == 'SUCCESS':
+        response['status'] = '¡Completado exitosamente! ✅'
+        response['progress'] = 100
+        response['current_step'] = 5
+        response['total_steps'] = 5
+        response['result'] = task.result
+
+    elif task.state == 'FAILURE':
+        response['status'] = 'Error en el análisis ❌'
+        response['progress'] = 0
+        response['current_step'] = 0
+        response['total_steps'] = 5
+        response['error'] = str(task.info)
+
+    else:
+        response['status'] = task.state
+        response['progress'] = 25
+        response['current_step'] = 1
+        response['total_steps'] = 5
+
+    return JsonResponse(response)
+
+
+@login_required
+def verificar_tareas_batch(request):
+    """
+    API para verificar el estado de múltiples tareas
+    POST con {"task_ids": ["id1", "id2", ...]}
+    """
+    import json
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        task_ids = data.get('task_ids', [])
+
+        results = []
+        for task_id in task_ids:
+            task = AsyncResult(task_id)
+            results.append({
+                'task_id': task_id,
+                'state': task.state,
+                'ready': task.ready(),
+                'successful': task.successful() if task.ready() else None,
+            })
+
+        return JsonResponse({'tasks': results})
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+# 🔥 VISTA OPCIONAL: Análisis individual con Celery
+@login_required
+@token_required
+def analizar_proyecto_individual(request, project_id):
+    """
+    Analizar un proyecto individual de forma asíncrona
+    """
+    project = get_object_or_404(Project, id=project_id)
+    usu_token = SonarToken.objects.get(user=request.user)
+
+    try:
+        # Lanzar análisis asíncrono
+        task = analizar_proyecto_completo.delay(
+            proyecto_path=project.path,
+            usuario_id=request.user.id,
+            token=usu_token.token
+        )
+
+        # Guardar task_id en la sesión
+        request.session[f'task_{project.id}'] = task.id
+
+        messages.success(
+            request,
+            f"✅ Análisis iniciado para {project.name} (Task ID: {task.id})"
+        )
+
+        return redirect('main:ver_resultados', project_id=project.id)
 
     except Exception as e:
-        print(f"❌ Error general en analizarProyectos({proyecto_path}): {e}")
-        raise
+        messages.error(request, f"Error: {str(e)}")
+        return redirect('main:dashboardAnalisis')
+
+
+# 🔥 VISTA DE PRUEBA: Probar Celery
+@login_required
+def test_celery_view(request):
+    """
+    Vista simple para probar que Celery funciona
+    """
+    try:
+        task = test_celery.delay()
+        messages.success(
+            request,
+            f"✅ Tarea de prueba lanzada correctamente. Task ID: {task.id}"
+        )
+    except Exception as e:
+        messages.error(request, f"❌ Error: {str(e)}")
+
+    return redirect('main:home')
 
 
 @login_required
@@ -399,3 +560,269 @@ def ver_resultados(request, project_id):
     }
 
     return render(request, 'main/resultados.html', context)
+
+
+def is_celery_available():
+    """
+    Verifica si Celery/Redis está disponible y funcionando
+    """
+    try:
+        from celery import current_app
+        # Intentar hacer ping al broker
+        current_app.connection().ensure_connection(max_retries=1)
+        return True
+    except Exception as e:
+        logger.info(f"Celery no disponible: {e}")
+        return False
+
+
+@login_required
+def analizar_sse(request):
+    """
+    Vista para Server-Sent Events (streaming de progreso)
+    IMPORTANTE: EventSource siempre usa GET
+    """
+    # Obtener datos de la sesión
+    path = request.session.get('analysis_path')
+    user_id = request.session.get('analysis_user_id')
+    token = request.session.get('analysis_token')
+
+    if not all([path, user_id, token]):
+        def error_stream():
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Sesion invalida'})}\n\n"
+
+        response = StreamingHttpResponse(error_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        return response
+
+    if not os.path.isdir(path):
+        def error_stream():
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Ruta invalida'})}\n\n"
+
+        response = StreamingHttpResponse(error_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        return response
+
+    directorio = pathlib.Path(path)
+    proyectos = [p for p in directorio.iterdir() if p.is_dir()]
+
+    def event_stream():
+        """
+        Generador que yielda eventos SSE durante el análisis
+        """
+        try:
+            for proyecto in proyectos:
+                # Llamar a la lógica con callback para SSE
+                for event_data in _analizar_proyecto_con_sse(
+                        str(proyecto),
+                        user_id,
+                        token
+                ):
+                    # Formatear como Server-Sent Event
+                    yield f"data: {json.dumps(event_data)}\n\n"
+
+            # Evento final de completado
+            yield f"data: {json.dumps({'type': 'complete', 'redirect': '/dashboardAnalisis/'})}\n\n"
+
+            # Limpiar sesión
+            if 'analysis_path' in request.session:
+                del request.session['analysis_path']
+            if 'analysis_user_id' in request.session:
+                del request.session['analysis_user_id']
+            if 'analysis_token' in request.session:
+                del request.session['analysis_token']
+
+        except Exception as e:
+            logger.error(f"Error en SSE: {str(e)}")
+            error_data = {
+                'type': 'error',
+                'message': str(e)
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
+
+    response = StreamingHttpResponse(
+        event_stream(),
+        content_type='text/event-stream'
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
+
+
+def _analizar_proyecto_con_sse(proyecto_path: str, usuario_id: int, token: str):
+    """
+    Versión de análisis que yielda eventos para SSE
+    """
+    from .models import Project
+
+    try:
+        proyecto_path = pathlib.Path(proyecto_path)
+        project_key = sonar.normalizar_project_key(proyecto_path.name)
+
+        # Evento 1: Inicialización
+        yield {
+            'type': 'progress',
+            'step': 1,
+            'percent': 10,
+            'message': f'Inicializando {proyecto_path.name}...'
+        }
+
+        print(f"\n{'=' * 60}")
+        print(f"ANALIZANDO: {proyecto_path.name}")
+        print(f"Project Key: {project_key}")
+        print(f"{'=' * 60}\n")
+
+        user = User.objects.get(id=usuario_id)
+
+        project, created = Project.objects.update_or_create(
+            key=project_key,
+            defaults={
+                'name': proyecto_path.name,
+                'path': str(proyecto_path),
+                'created_by': user
+            }
+        )
+
+        if created:
+            print(f"Proyecto creado: {project.name} (ID: {project.id_project})")
+        else:
+            print(f"Proyecto existente: {project.name} (ID: {project.id_project})")
+
+        yield {
+            'type': 'progress',
+            'step': 1,
+            'percent': 20,
+            'message': 'Proyecto listo para análisis'
+        }
+
+        # Evento 2: SonarQube
+        print("\n" + "=" * 60)
+        print("FASE 1: Análisis con SonarQube")
+        print("=" * 60)
+
+        yield {
+            'type': 'progress',
+            'step': 2,
+            'percent': 25,
+            'message': 'Ejecutando análisis de SonarQube...'
+        }
+
+        scanner_path = settings.SONAR_SCANNER_PATH
+        success_sonar, mensaje_sonar = sonar.analizar(
+            scanner_path,
+            str(proyecto_path),
+            token
+        )
+
+        if success_sonar:
+            print("SonarQube: Análisis completado exitosamente")
+
+            yield {
+                'type': 'progress',
+                'step': 2,
+                'percent': 45,
+                'message': 'SonarQube completado, esperando procesamiento...'
+            }
+
+            print("Procesando métricas de SonarQube...")
+
+            yield {
+                'type': 'progress',
+                'step': 2,
+                'percent': 50,
+                'message': 'Procesando métricas de SonarQube...'
+            }
+
+            sonar.procesar_con_reintentos(project, token, project_key, max_reintentos=3)
+
+            print("SonarQube: Métricas procesadas y guardadas")
+
+            yield {
+                'type': 'progress',
+                'step': 2,
+                'percent': 60,
+                'message': 'Métricas de SonarQube guardadas'
+            }
+        else:
+            print(f"SonarQube falló: {mensaje_sonar}")
+            yield {
+                'type': 'error',
+                'message': f'SonarQube falló: {mensaje_sonar}'
+            }
+            return
+
+        # Evento 3: SourceMeter
+        print("\n" + "=" * 60)
+        print("FASE 2: Análisis con SourceMeter")
+        print("=" * 60)
+
+        yield {
+            'type': 'progress',
+            'step': 3,
+            'percent': 65,
+            'message': 'Ejecutando análisis de SourceMeter...'
+        }
+
+        scanner_path = settings.SOURCEMETER_PATH
+        success_source, mensaje_source = source.analizar(
+            scanner_path,
+            str(proyecto_path),
+            proyecto_path.name
+        )
+
+        if success_source:
+            print("SourceMeter: Análisis completado exitosamente")
+
+            yield {
+                'type': 'progress',
+                'step': 3,
+                'percent': 75,
+                'message': 'SourceMeter completado, procesando métricas...'
+            }
+
+            print("Procesando métricas de SourceMeter...")
+
+            source.procesar(project, project_key)
+
+            print("SourceMeter: Métricas procesadas y guardadas")
+
+            yield {
+                'type': 'progress',
+                'step': 3,
+                'percent': 90,
+                'message': 'Métricas de SourceMeter guardadas'
+            }
+        else:
+            print(f"SourceMeter: {mensaje_source}")
+            yield {
+                'type': 'progress',
+                'step': 3,
+                'percent': 85,
+                'message': f'Advertencia en SourceMeter: {mensaje_source}'
+            }
+
+        # Evento 4: Finalización
+        print(f"\n{'=' * 60}")
+        print(f"ANÁLISIS COMPLETADO: {proyecto_path.name}")
+        print(f"   SonarQube: {'OK' if success_sonar else 'Error'}")
+        print(f"   SourceMeter: {'OK' if success_source else 'Warning'}")
+        print(f"{'=' * 60}\n")
+
+        yield {
+            'type': 'progress',
+            'step': 5,
+            'percent': 100,
+            'message': 'Análisis completado exitosamente'
+        }
+
+    except Exception as e:
+        print(f"\nERROR GENERAL: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        yield {
+            'type': 'error',
+            'message': str(e)
+        }

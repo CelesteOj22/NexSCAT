@@ -12,7 +12,7 @@
         align-items: center;
         justify-content: center;
         min-height: calc(100vh - 90px - 300px);
-        padding: 80px 20px 40px; /* ← MÁS padding arriba */
+        padding: 80px 20px 40px;
     }
 
     .import-container {
@@ -30,37 +30,147 @@
         font-weight: 600;
     }
 
+    /* Estilos para el modal de progreso */
     #progressModal .modal-content {
         background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
     }
 
+    #progressModal .modal-header {
+        border-bottom: 2px solid #f0f0f0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+
+    #progressModal .modal-title {
+        font-weight: 600;
+    }
+
+    /* Barra de progreso mejorada */
+    .progress {
+        height: 30px;
+        border-radius: 15px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 30px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+    }
+
+    /* Pasos de progreso */
     .progress-step {
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
+        padding: 12px 15px;
+        margin: 8px 0;
+        border-radius: 8px;
         transition: all 0.3s ease;
-    }
-
-    .progress-step.active {
-        background-color: #0d6efd;
-        color: white;
-        font-weight: bold;
-    }
-
-    .progress-step.completed {
-        background-color: #198754;
-        color: white;
+        background-color: #f8f9fa;
+        border-left: 4px solid #dee2e6;
+        display: flex;
+        align-items: center;
     }
 
     .progress-step i {
-        margin-right: 10px;
+        margin-right: 12px;
+        font-size: 1.2rem;
+        min-width: 24px;
+    }
+
+    .progress-step span {
+        flex: 1;
+        font-size: 0.95rem;
+    }
+
+    .progress-step.active {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white;
+        font-weight: 600;
+        border-left-color: #0a58ca;
+        transform: translateX(5px);
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+    }
+
+    .progress-step.active i {
+        animation: spin 1s linear infinite;
+    }
+
+    .progress-step.completed {
+        background: linear-gradient(135deg, #198754 0%, #157347 100%);
+        color: white;
+        font-weight: 500;
+        border-left-color: #157347;
+        box-shadow: 0 2px 8px rgba(25, 135, 84, 0.2);
+    }
+
+    .progress-step.completed i {
+        animation: none;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Personalización de SweetAlert2 */
+    .swal2-popup {
+        border-radius: 15px;
+        font-family: inherit;
+    }
+
+    .swal2-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .swal2-html-container {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translate3d(0, -100%, 0);
+            opacity: 0;
+        }
+        to {
+            transform: translate3d(0, 0, 0);
+            opacity: 1;
+        }
+    }
+
+    .swal2-show {
+        animation: slideInDown 0.3s;
+    }
+
+    /* Nota informativa en el modal */
+    .modal-info-note {
+        background: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        color: #004085;
+    }
+
+    .modal-info-note i {
+        margin-right: 8px;
     }
 
     /* Responsive - Tablets */
     @media (max-width: 768px) {
         .import-section {
             min-height: calc(100vh - 90px - 250px);
-            padding: 60px 15px 30px; /* ← Padding ajustado */
+            padding: 60px 15px 30px;
         }
 
         .import-container {
@@ -71,13 +181,35 @@
         .import-container h3 {
             font-size: 1.5rem;
         }
+
+        .swal2-title {
+            font-size: 1.5rem;
+        }
+
+        .swal2-html-container {
+            font-size: 1rem;
+        }
+
+        .progress {
+            height: 25px;
+        }
+
+        .progress-bar {
+            line-height: 25px;
+            font-size: 13px;
+        }
+
+        .progress-step {
+            padding: 10px 12px;
+            font-size: 0.9rem;
+        }
     }
 
     /* Responsive - Móviles */
     @media (max-width: 480px) {
         .import-section {
             min-height: calc(100vh - 90px - 200px);
-            padding: 40px 10px 20px; /* ← Padding ajustado */
+            padding: 40px 10px 20px;
         }
 
         .import-container {
@@ -93,13 +225,40 @@
         .form-label {
             font-size: 0.9rem;
         }
+
+        .swal2-title {
+            font-size: 1.3rem;
+        }
+
+        .swal2-html-container {
+            font-size: 0.95rem;
+        }
+
+        .progress {
+            height: 22px;
+        }
+
+        .progress-bar {
+            line-height: 22px;
+            font-size: 12px;
+        }
+
+        .progress-step {
+            padding: 8px 10px;
+            font-size: 0.85rem;
+        }
+
+        .progress-step i {
+            font-size: 1rem;
+            min-width: 20px;
+        }
     }
 
     /* Para pantallas muy grandes */
     @media (min-width: 1400px) {
         .import-section {
             min-height: calc(100vh - 90px - 350px);
-            padding: 100px 20px 40px; /* ← Más padding para pantallas grandes */
+            padding: 100px 20px 40px;
         }
     }
 </style>
@@ -109,10 +268,6 @@
 <div class="import-section">
     <div class="import-container">
         <h3 class="text-center">📁 Importar Proyecto Local</h3>
-
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
 
         <form method="post" action="{% url 'main:importarProyecto' %}" id="importForm">
             {% csrf_token %}
@@ -133,29 +288,34 @@
 
 <!-- Modal de Progreso -->
 <div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Analizando Proyectos</h5>
+                <h5 class="modal-title">
+                    <i class="bi bi-gear-fill me-2"></i>
+                    Analizando Proyectos
+                </h5>
             </div>
             <div class="modal-body">
-                <div class="progress mb-3">
+                <!-- Barra de progreso principal -->
+                <div class="progress mb-4">
                     <div class="progress-bar progress-bar-striped progress-bar-animated"
                          role="progressbar" id="progressBar" style="width: 0%">0%</div>
                 </div>
 
+                <!-- Pasos del proceso -->
                 <div id="progressSteps">
                     <div class="progress-step" id="step1">
                         <i class="bi bi-hourglass-split"></i>
                         <span>Verificando herramientas...</span>
                     </div>
                     <div class="progress-step" id="step2">
-                        <i class="bi bi-folder-check"></i>
-                        <span>Escaneando proyectos...</span>
+                        <i class="bi bi-search"></i>
+                        <span>Analizando con SonarQube...</span>
                     </div>
                     <div class="progress-step" id="step3">
-                        <i class="bi bi-gear"></i>
-                        <span>Analizando con herramientas...</span>
+                        <i class="bi bi-file-earmark-code"></i>
+                        <span>Analizando con SourceMeter...</span>
                     </div>
                     <div class="progress-step" id="step4">
                         <i class="bi bi-bar-chart"></i>
@@ -167,8 +327,11 @@
                     </div>
                 </div>
 
-                <div class="mt-3 text-center">
-                    <small class="text-muted">Por favor, no cierres esta ventana</small>
+                <!-- Nota informativa -->
+                <div class="modal-info-note mt-4">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Por favor, no cierres esta ventana.</strong>
+                    El análisis puede tardar varios minutos dependiendo del tamaño del proyecto.
                 </div>
             </div>
         </div>
@@ -178,41 +341,328 @@
 
 {% block extra_js %}
 <script>
+    // ========================================
+    // 🎨 Mostrar SweetAlert2 para mensajes de Django
+    // ========================================
+    {% if messages %}
+        document.addEventListener('DOMContentLoaded', function() {
+            {% for message in messages %}
+                showMessage('{{ message.tags }}', '{{ message|escapejs }}');
+            {% endfor %}
+        });
+    {% endif %}
+
+    /**
+     * Muestra un mensaje con SweetAlert2
+     * @param {string} type - Tipo de mensaje (error, warning, success, info)
+     * @param {string} message - Texto del mensaje
+     */
+    function showMessage(type, message) {
+        let icon, title, confirmButtonColor;
+
+        switch(type) {
+            case 'error':
+            case 'danger':
+                icon = 'error';
+                title = '¡Error!';
+                confirmButtonColor = '#dc3545';
+                break;
+            case 'warning':
+                icon = 'warning';
+                title = '¡Advertencia!';
+                confirmButtonColor = '#ffc107';
+                break;
+            case 'success':
+                icon = 'success';
+                title = '¡Éxito!';
+                confirmButtonColor = '#198754';
+                break;
+            case 'info':
+            default:
+                icon = 'info';
+                title = 'Información';
+                confirmButtonColor = '#0d6efd';
+                break;
+        }
+
+        Swal.fire({
+            title: title,
+            html: message,
+            icon: icon,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: confirmButtonColor,
+            customClass: {
+                popup: 'swal2-show'
+            },
+            showClass: {
+                popup: 'swal2-show'
+            },
+            backdrop: true,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            timer: type === 'success' ? 3000 : undefined,
+            timerProgressBar: type === 'success',
+        });
+    }
+
+    // ========================================
+    // 📝 Manejo del formulario de importación
+    // ========================================
     document.getElementById('importForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevenir envío normal
+
+        const formData = new FormData(this);
         const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+
+        // Mostrar modal inmediatamente
         modal.show();
 
-        let progress = 0;
-        let currentStep = 1;
-        const totalSteps = 5;
-
-        const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 100) progress = 100;
-
-            const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = progress + '%';
-            progressBar.textContent = Math.round(progress) + '%';
-
-            const stepProgress = Math.floor((progress / 100) * totalSteps);
-            if (stepProgress > currentStep - 1) {
-                if (currentStep > 1) {
-                    const prevStep = document.getElementById('step' + (currentStep - 1));
-                    prevStep.classList.remove('active');
-                    prevStep.classList.add('completed');
-                }
-
-                if (currentStep <= totalSteps) {
-                    const step = document.getElementById('step' + currentStep);
-                    step.classList.add('active');
-                    currentStep++;
-                }
+        // Verificar modo de análisis (Celery vs SSE)
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-
-            if (progress >= 99) {
-                clearInterval(interval);
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en el servidor');
+                });
             }
-        }, 500);
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Modo de análisis:', data);
+
+            if (data.mode === 'async' && data.task_ids) {
+                // 🚀 Modo asíncrono con Celery
+                console.log('🚀 Usando Celery para análisis asíncrono');
+                monitorearTareasCelery(data.task_ids);
+            } else if (data.mode === 'sync' && data.use_sse) {
+                // 📡 Modo síncrono con Server-Sent Events
+                console.log('📡 Usando SSE (Server-Sent Events) para progreso en tiempo real');
+                monitorearConSSE();
+            } else if (data.error) {
+                // ❌ Error
+                modal.hide();
+                showMessage('error', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            modal.hide();
+            showMessage('error', error.message || 'Error al enviar el formulario');
+        });
     });
+
+    // ========================================
+    // 📡 Monitorear progreso con Server-Sent Events (SSE)
+    // ========================================
+    /**
+     * Monitorea el progreso del análisis usando SSE
+     * Recibe actualizaciones en tiempo real del servidor
+     */
+    function monitorearConSSE() {
+        console.log('📡 Iniciando conexión SSE...');
+
+        const progressBar = document.getElementById('progressBar');
+        const steps = {
+            1: document.getElementById('step1'),
+            2: document.getElementById('step2'),
+            3: document.getElementById('step3'),
+            4: document.getElementById('step4'),
+            5: document.getElementById('step5')
+        };
+
+        let lastStep = 0;
+
+        // Crear conexión EventSource (GET automático)
+        const eventSource = new EventSource('/analizar_sse/');
+
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📨 Evento SSE recibido:', data);
+
+            if (data.type === 'progress') {
+                // Actualizar barra de progreso
+                progressBar.style.width = data.percent + '%';
+                progressBar.textContent = data.percent + '%';
+
+                // Actualizar pasos
+                const currentStep = data.step;
+
+                if (currentStep !== lastStep) {
+                    // Marcar pasos anteriores como completados
+                    for (let i = 1; i < currentStep; i++) {
+                        if (steps[i]) {
+                            steps[i].classList.remove('active');
+                            steps[i].classList.add('completed');
+                        }
+                    }
+
+                    // Activar paso actual
+                    if (steps[currentStep]) {
+                        steps[currentStep].classList.add('active');
+                    }
+
+                    lastStep = currentStep;
+                }
+
+                // Actualizar mensaje del paso actual
+                if (steps[currentStep]) {
+                    const stepText = steps[currentStep].querySelector('span');
+                    if (stepText) {
+                        stepText.textContent = data.message;
+                    }
+                }
+            } else if (data.type === 'complete') {
+                // ✅ Análisis completado
+                console.log('✅ Análisis completado');
+                eventSource.close();
+
+                // Completar todos los pasos visualmente
+                Object.values(steps).forEach(step => {
+                    step.classList.remove('active');
+                    step.classList.add('completed');
+                });
+
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+
+                // Mostrar mensaje de éxito
+                showMessage('success', '¡Análisis completado exitosamente!');
+
+                // Redirigir después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000);
+            } else if (data.type === 'error') {
+                // ❌ Error en el análisis
+                console.error('❌ Error en análisis:', data.message);
+                eventSource.close();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+                modal.hide();
+
+                showMessage('error', data.message);
+            }
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('❌ Error en conexión SSE:', error);
+            eventSource.close();
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+            modal.hide();
+
+            showMessage('error', 'Error en la conexión con el servidor. Por favor, inténtelo nuevamente.');
+        };
+    }
+
+    // ========================================
+    // 🚀 Monitorear tareas de Celery
+    // ========================================
+    /**
+     * Monitorea el progreso de tareas Celery en tiempo real
+     * @param {Array} taskIds - Array de objetos con task_id y project_name
+     */
+    function monitorearTareasCelery(taskIds) {
+        console.log('📊 Monitoreando tareas Celery:', taskIds);
+
+        const progressBar = document.getElementById('progressBar');
+        const steps = {
+            1: document.getElementById('step1'),
+            2: document.getElementById('step2'),
+            3: document.getElementById('step3'),
+            4: document.getElementById('step4'),
+            5: document.getElementById('step5')
+        };
+
+        let lastStep = 0;
+
+        // Polling cada segundo para verificar estado
+        const interval = setInterval(() => {
+            // Verificar primera tarea (simplificado para un proyecto)
+            const taskId = taskIds[0].task_id;
+
+            fetch(`/verificar_tarea/${taskId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📊 Estado Celery:', data);
+
+                    // Actualizar barra de progreso
+                    const progress = data.progress || 0;
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = Math.round(progress) + '%';
+
+                    // Actualizar paso actual
+                    const currentStep = data.current_step || 0;
+
+                    if (currentStep !== lastStep) {
+                        lastStep = currentStep;
+
+                        // Limpiar estados anteriores
+                        Object.values(steps).forEach(step => {
+                            step.classList.remove('active');
+                        });
+
+                        // Marcar pasos completados
+                        for (let i = 1; i < currentStep; i++) {
+                            if (steps[i] && !steps[i].classList.contains('completed')) {
+                                steps[i].classList.add('completed');
+                            }
+                        }
+
+                        // Marcar paso actual como activo
+                        if (currentStep > 0 && currentStep <= 5 && steps[currentStep]) {
+                            steps[currentStep].classList.add('active');
+                        }
+                    }
+
+                    // Actualizar mensaje del paso actual
+                    if (data.status && currentStep > 0 && steps[currentStep]) {
+                        const stepText = steps[currentStep].querySelector('span');
+                        if (stepText) {
+                            stepText.textContent = data.status;
+                        }
+                    }
+
+                    // Verificar si terminó
+                    if (data.ready) {
+                        clearInterval(interval);
+
+                        if (data.successful) {
+                            // ✅ Completado exitosamente
+                            Object.values(steps).forEach(step => {
+                                step.classList.remove('active');
+                                step.classList.add('completed');
+                            });
+
+                            progressBar.style.width = '100%';
+                            progressBar.textContent = '100%';
+
+                            showMessage('success', '¡Análisis completado exitosamente!');
+
+                            // Redirigir después de 2 segundos
+                            setTimeout(() => {
+                                window.location.href = "{% url 'main:dashboardAnalisis' %}";
+                            }, 2000);
+                        } else {
+                            // ❌ Error en la tarea
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+                            modal.hide();
+                            showMessage('error', data.error || 'Error en el análisis');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error verificando tarea:', error);
+                    // No detener el intervalo, seguir intentando
+                });
+
+        }, 1000); // Verificar cada segundo
+    }
 </script>
 {% endblock %}

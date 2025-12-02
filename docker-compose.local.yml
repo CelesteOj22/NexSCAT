@@ -1,0 +1,194 @@
+# docker-compose.local.yml
+# ============================================
+# Configuración para Desarrollo Local
+# Alto rendimiento - Análisis paralelo
+# ============================================
+name: nexscat
+version: "3.8"
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  db:
+    image: postgres:15-alpine
+    container_name: nexscat_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Redis (para Celery)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: nexscat_redis_local
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # SonarQube Server (Más recursos)
+  # ============================================
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: nexscat_sonarqube_local
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/postgres
+      SONAR_JDBC_USERNAME: postgres
+      SONAR_JDBC_PASSWORD: 1234
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      # Más memoria para desarrollo local
+      SONAR_CE_JAVAOPTS: "-Xmx2048m -Xms512m"
+      SONAR_WEB_JAVAOPTS: "-Xmx2048m -Xms512m"
+    volumes:
+      - sonarqube_data_local:/opt/sonarqube/data
+      - sonarqube_logs_local:/opt/sonarqube/logs
+      - sonarqube_extensions_local:/opt/sonarqube/extensions
+    ports:
+      - "9000:9000"
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/api/system/status | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # ============================================
+  # Django Web Application (Development mode)
+  # ============================================
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: nexscat_web_local
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app  # Mount proyecto completo para hot-reload
+      - ./media:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      # Modo alto rendimiento - Análisis paralelo
+      SCAT_MODE: ${SCAT_MODE:-performance}
+      DEBUG: "True"
+      SECRET_KEY: dev-secret-key-change-in-production
+      DATABASE_URL: postgresql://postgres:1234@db:5432/postgres
+      SONARQUBE_URL: http://sonarqube:9000
+      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sonarqube:
+        condition: service_healthy
+    networks:
+      - nexscat_network
+
+  # ============================================
+  # Celery Worker (Análisis paralelo)
+  # ============================================
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: nexscat_celery_local
+    restart: unless-stopped
+    command: celery -A scat worker --loglevel=info --concurrency=6
+    volumes:
+      - .:/app
+      - ./media:/app/media
+    environment:
+      SCAT_MODE: performance
+      DATABASE_URL: postgresql://postgres:1234@db:5432/postgres
+      SONARQUBE_URL: http://sonarqube:9000
+      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - nexscat_network
+
+  # ============================================
+  # Flower (Monitor de Celery - Opcional)
+  # ============================================
+  flower:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: nexscat_flower_local
+    restart: unless-stopped
+    command: celery -A scat flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - nexscat_network
+
+# ============================================
+# Volúmenes persistentes (local)
+# ============================================
+volumes:
+  postgres_data_local:
+    name: nexscat_postgres_data_local
+    driver: local
+  sonarqube_data_local:
+    name: nexscat_sonarqube_data_local
+    driver: local
+  sonarqube_logs_local:
+    name: nexscat_sonarqube_logs_local
+    driver: local
+  sonarqube_extensions_local:
+    name: nexscat_sonarqube_extensions_local
+    driver: local
+
+# ============================================
+# Red
+# ============================================
+networks:
+  nexscat_network:
+    name: nexscat_network
+    driver: bridge

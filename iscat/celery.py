@@ -1,9 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-import os
+# scat/celery.py
 from celery import Celery
+import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "iscat.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'scat.settings')
 
-app = Celery("iscat")
-app.config_from_object("django.conf:settings", namespace="CELERY")
+app = Celery('scat')
+app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
