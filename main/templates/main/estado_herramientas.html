@@ -261,60 +261,6 @@
             </div>
         </div>
 
-        <!-- Resumen General -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <div class="summary-card">
-                    <h5 class="mb-4">
-                        <i class="bi bi-info-circle"></i>
-                        Resumen del Sistema
-                    </h5>
-                    <div class="row text-center">
-                        <div class="col-md-4">
-                            <h2>
-                                {% if sonar_status.disponible and sourcemeter_status.disponible %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                {% elif sonar_status.disponible or sourcemeter_status.disponible %}
-                                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </h2>
-                            <p class="text-muted">Estado General</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h2>
-                                {% if sonar_status.disponible %}1{% else %}0{% endif %} +
-                                {% if sourcemeter_status.disponible %}1{% else %}0{% endif %}
-                            </h2>
-                            <p class="text-muted">Herramientas Disponibles</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h2>
-                                {% if sonar_status.disponible and sourcemeter_status.disponible %}
-                                    <span class="text-success">Listo</span>
-                                {% else %}
-                                    <span class="text-warning">Config. Requerida</span>
-                                {% endif %}
-                            </h2>
-                            <p class="text-muted">Capacidad de Análisis</p>
-                        </div>
-                    </div>
-
-                    {% if sonar_status.disponible and sourcemeter_status.disponible %}
-                        <div class="alert alert-success mt-3 text-center">
-                            <i class="bi bi-check-circle"></i>
-                            Todas las herramientas están disponibles. El sistema está listo para realizar análisis.
-                        </div>
-                    {% else %}
-                        <div class="alert alert-warning mt-3 text-center">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            Algunas herramientas no están disponibles. Complete la configuración para habilitar todas las funcionalidades.
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 

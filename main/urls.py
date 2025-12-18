@@ -37,4 +37,11 @@ urlpatterns = [
     path('proyecto/<int:project_id>/analizar/', views.analizar_proyecto_individual, name='analizar_proyecto_individual'),
     path('test-celery/', views.test_celery_view, name='test_celery'),
     path('analizar_sse/', views.analizar_sse, name='analizar_sse'),
+
+# Administración de usuarios
+    path('users/', views.user_management, name='user_management'),
+    path('users/create/', views.create_user, name='create_user'),
+    path('users/get/<int:user_id>/', views.get_user, name='get_user'),
+    path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
+    path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
 ]

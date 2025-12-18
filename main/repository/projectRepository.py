@@ -43,7 +43,6 @@ def update_project(project_name, last_analysis, tool):
         if tool == "sm":
             project.last_analysis_sm = last_analysis
         else:
-            print("lastAnalysissq actualizado perra")
             project.last_analysis_sq = last_analysis
         project.save()
     except Project.DoesNotExist:

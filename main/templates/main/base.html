@@ -16,7 +16,7 @@
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500&family=Jost:wght@500;600;700&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500&family=Jost:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icon Font Stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -35,6 +35,7 @@
     <!-- sweetalert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- CSS Global -->
     <style>
        /* ============================================
@@ -87,6 +88,74 @@
         border-color: #667eea;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
     }
+
+    /* Badge para admin en navbar */
+    .admin-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 4px;
+        font-weight: 600;
+    }
+
+    /* Estilos para el dropdown de usuario */
+    .user-dropdown {
+        cursor: pointer;
+    }
+
+    .user-dropdown .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    .user-dropdown:hover .user-avatar {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .user-dropdown .dropdown-toggle::after {
+        display: none;
+    }
+
+    .user-dropdown .dropdown-menu {
+        min-width: 200px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: none;
+        margin-top: 10px;
+    }
+
+    .user-dropdown .dropdown-item {
+        padding: 10px 20px;
+        transition: all 0.2s ease;
+    }
+
+    .user-dropdown .dropdown-item:hover {
+        background-color: #f8f9fa;
+        padding-left: 25px;
+    }
+
+    .user-dropdown .dropdown-divider {
+        margin: 0.5rem 0;
+    }
+
+    .user-dropdown .dropdown-header {
+        padding: 10px 20px;
+        font-weight: 600;
+        color: #667eea;
+    }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -113,19 +182,64 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarCollapse">
                     <div class="navbar-nav mx-auto py-0">
-                        <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
-                        <a href="{% url 'main:estado_herramientas' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'estado_herramientas' %}active{% endif %}">Herramientas</a>
-                        <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">Proyectos Analizados</a>
+                        <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                            Home
+                        </a>
+                        <a href="{% url 'main:estado_herramientas' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'estado_herramientas' %}active{% endif %}">
+                            Herramientas
+                        </a>
+                        <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">
+                            Proyectos Analizados
+                        </a>
                         {% if user.is_authenticated %}
-                            <a href="{% url 'main:importarProyecto' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'importarProyecto' %}active{% endif %}">Importar Proyecto</a>
+                            <a href="{% url 'main:importarProyecto' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'importarProyecto' %}active{% endif %}">
+                                Importar Proyecto
+                            </a>
+                        {% endif %}
+
+                        <!-- TAB DE ADMINISTRACIÓN - SOLO VISIBLE PARA SUPERUSUARIOS -->
+                        {% if user.is_superuser %}
+                            <a href="{% url 'main:user_management' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
+                                <i class="fas fa-users-cog me-1"></i>Administración
+                            </a>
                         {% endif %}
                     </div>
+
                     {% if user.is_authenticated %}
-                        <span class="me-3 fw-medium">Hola, {{ user.username }}</span>
-                        <a href="{% url 'main:configurarToken' %}" class="nav-item nav-link me-2">Configurar Token</a>
-                        <a href="{% url 'main:logout' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Cerrar sesión</a>
+                        <!-- Dropdown de Usuario -->
+                        <div class="dropdown user-dropdown ms-3">
+                            <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <div class="dropdown-header">
+                                        {{ user.username }}
+                                        {% if user.is_superuser %}
+                                            <span class="admin-badge">ADMIN</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'main:configurarToken' %}">
+                                        <i class="fas fa-key me-2"></i>Configurar Token
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'main:logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     {% else %}
-                        <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Login</a>
+                        <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">
+                            Login
+                        </a>
                     {% endif %}
                 </div>
             </nav>
@@ -172,6 +286,9 @@
                         <a class="btn btn-link" href="{% url 'main:estado_herramientas' %}">Estado Herramientas</a>
                         {% if user.is_authenticated %}
                             <a class="btn btn-link" href="{% url 'main:importarProyecto' %}">Importar Proyecto</a>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                            <a class="btn btn-link" href="{% url 'main:user_management' %}">Administración</a>
                         {% endif %}
                     </div>
                     <div class="col-md-6 col-lg-3">

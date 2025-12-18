@@ -4,20 +4,22 @@ import pathlib
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
 # para renderizar templates?
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db.models import Max
 from django.http import JsonResponse
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Metric, Project, SonarToken, Component, ProjectMeasure
 from main.services.factory import sonar, source
 from .forms import SonarTokenForm
-from .repository.projectRepository import update_project
 
-from .tasks import analizar_proyecto_completo, analizar_sonar, analizar_sourcemeter, test_celery
+from .services.user import UserService
+
+from .tasks import analizar_proyecto_completo, test_celery
 from celery.result import AsyncResult
 
 import json
@@ -784,7 +786,7 @@ def _analizar_proyecto_con_sse(proyecto_path: str, usuario_id: int, token: str):
 
             print("Procesando métricas de SourceMeter...")
 
-            source.procesar(project, project_key)
+            source.procesar(project, proyecto_path.name)
 
             print("SourceMeter: Métricas procesadas y guardadas")
 
@@ -826,3 +828,133 @@ def _analizar_proyecto_con_sse(proyecto_path: str, usuario_id: int, token: str):
             'type': 'error',
             'message': str(e)
         }
+
+
+def is_superuser(user):
+    """Verifica si el usuario es superusuario"""
+    return user.is_superuser
+
+
+@login_required
+@user_passes_test(is_superuser)
+def user_management(request):
+    """Vista principal de administración de usuarios"""
+    service = UserService()
+
+    # Obtener usuarios con filtros
+    users_list = service.get_users_with_filters(
+        search=request.GET.get('search'),
+        status=request.GET.get('status'),
+        role=request.GET.get('role')
+    )
+
+    # Paginación
+    paginator = Paginator(users_list, 15)
+    page = request.GET.get('page')
+    users = paginator.get_page(page)
+
+    # Estadísticas
+    statistics = service.get_user_statistics()
+
+    context = {
+        'users': users,
+        **statistics
+    }
+
+    return render(request, 'users/user_management.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def create_user(request):
+    """Crear nuevo usuario"""
+    if request.method == 'POST':
+        service = UserService()
+
+        try:
+            user = service.create_user(
+                username=request.POST.get('username'),
+                email=request.POST.get('email'),
+                password1=request.POST.get('password1'),
+                password2=request.POST.get('password2'),
+                first_name=request.POST.get('first_name', ''),
+                last_name=request.POST.get('last_name', ''),
+                is_active=request.POST.get('is_active') == 'on',
+                is_staff=request.POST.get('is_staff') == 'on',
+                is_superuser=request.POST.get('is_superuser') == 'on'
+            )
+
+            messages.success(request, f'Usuario "{user.username}" creado exitosamente.')
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f'Error inesperado: {str(e)}')
+            messages.error(request, 'Error inesperado al crear usuario.')
+
+    return redirect('main:user_management')
+
+
+@login_required
+@user_passes_test(is_superuser)
+def get_user(request, user_id):
+    """Obtener datos de usuario (JSON)"""
+    service = UserService()
+
+    try:
+        user = service.get_user_by_id(user_id)
+        data = service.get_user_data_dict(user)
+        return JsonResponse(data)
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=404)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def edit_user(request, user_id):
+    """Editar usuario"""
+    if request.method == 'POST':
+        service = UserService()
+
+        try:
+            user = service.update_user(
+                user_id=user_id,
+                username=request.POST.get('username'),
+                email=request.POST.get('email'),
+                first_name=request.POST.get('first_name', ''),
+                last_name=request.POST.get('last_name', ''),
+                password=request.POST.get('password') or None,
+                is_active=request.POST.get('is_active') == 'on',
+                is_staff=request.POST.get('is_staff') == 'on',
+                is_superuser=request.POST.get('is_superuser') == 'on'
+            )
+
+            messages.success(request, f'Usuario "{user.username}" actualizado exitosamente.')
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f'Error inesperado: {str(e)}')
+            messages.error(request, 'Error inesperado al actualizar usuario.')
+
+    return redirect('main:user_management')
+
+
+@login_required
+@user_passes_test(is_superuser)
+def delete_user(request, user_id):
+    """Eliminar usuario"""
+    if request.method == 'POST':
+        service = UserService()
+
+        try:
+            username = service.delete_user(user_id, request.user.id)
+            messages.success(request, f'Usuario "{username}" eliminado exitosamente.')
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f'Error inesperado: {str(e)}')
+            messages.error(request, 'Error inesperado al eliminar usuario.')
+
+    return redirect('main:user_management')
