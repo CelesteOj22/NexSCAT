@@ -8,7 +8,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 # para renderizar templates?
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
 from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -908,7 +907,7 @@ def is_superuser(user):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(lambda u: u.is_superuser)
 def user_management(request):
     """Vista principal de administración de usuarios"""
     service = UserService()
@@ -937,7 +936,7 @@ def user_management(request):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(lambda u: u.is_superuser)
 def create_user(request):
     """Crear nuevo usuario"""
     if request.method == 'POST':
@@ -968,7 +967,7 @@ def create_user(request):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(lambda u: u.is_superuser)
 def get_user(request, user_id):
     """Obtener datos de usuario (JSON)"""
     service = UserService()
@@ -982,7 +981,7 @@ def get_user(request, user_id):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
     """Editar usuario"""
     if request.method == 'POST':
@@ -1013,7 +1012,7 @@ def edit_user(request, user_id):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(lambda u: u.is_superuser)
 def delete_user(request, user_id):
     """Eliminar usuario"""
     if request.method == 'POST':
