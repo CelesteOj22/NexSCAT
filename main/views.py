@@ -12,8 +12,9 @@ from django.core.paginator import Paginator
 from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from .models import Metric, Project, SonarToken, Component, ProjectMeasure
+from .models import Metric, Project, SonarToken, Component, ProjectMeasure, ComponentMeasure, ClassMeasure
 from main.services.factory import sonar, source
 from .forms import SonarTokenForm
 
@@ -459,8 +460,15 @@ def configurarToken(request):
 @login_required
 def dashboardAnalisis(request):
     """
-    Vista general del dashboard con todas las métricas de todos los proyectos
+    Vista general del dashboard con métricas filtradas por nivel y paginación
+    Por defecto muestra solo métricas a nivel de proyecto
     """
+    # Obtener el nivel seleccionado (por defecto: Proyecto)
+    selected_level = request.GET.get('level', 'Proyecto')
+
+    # Obtener el número de página
+    page_number = request.GET.get('page', 1)
+
     # Obtener todos los proyectos del usuario (o todos si es admin)
     projects = Project.objects.all().order_by('name')
 
@@ -470,28 +478,86 @@ def dashboardAnalisis(request):
     # Obtener todas las herramientas únicas
     tools = Metric.objects.values_list('tool', flat=True).distinct()
 
-    # Obtener todas las medidas de proyectos
-    project_measures = ProjectMeasure.objects.select_related(
-        'id_project', 'id_metric'
-    ).all()
-
-    # Preparar datos para la tabla
+    # Preparar datos según el nivel seleccionado
     measures_data = []
-    for measure in project_measures:
-        measures_data.append({
-            'project_name': measure.id_project.name,
-            'project_key': measure.id_project.key,
-            'metric_name': measure.id_metric.name,
-            'metric_key': measure.id_metric.key,
-            'tool': measure.id_metric.tool,
-            'value': measure.value,
-            'description': measure.id_metric.description or '',
-        })
+
+    if selected_level in ['Proyecto', 'Todos']:
+        # MÉTRICAS A NIVEL DE PROYECTO
+        project_measures = ProjectMeasure.objects.select_related(
+            'id_project', 'id_metric'
+        ).all()
+
+        for measure in project_measures:
+            measures_data.append({
+                'level': 'Proyecto',
+                'project_name': measure.id_project.name,
+                'project_key': measure.id_project.key,
+                'entity_name': None,
+                'metric_name': measure.id_metric.name,
+                'metric_key': measure.id_metric.key,
+                'tool': measure.id_metric.tool,
+                'value': measure.value,
+                'description': measure.id_metric.description or '',
+            })
+
+    if selected_level in ['Componente', 'Todos']:
+        # MÉTRICAS A NIVEL DE COMPONENTE
+        component_measures = ComponentMeasure.objects.select_related(
+            'id_component__id_project', 'id_metric'
+        ).all()
+
+        for measure in component_measures:
+            measures_data.append({
+                'level': 'Componente',
+                'project_name': measure.id_component.id_project.name,
+                'project_key': measure.id_component.id_project.key,
+                'entity_name': measure.id_component.path,
+                'metric_name': measure.id_metric.name,
+                'metric_key': measure.id_metric.key,
+                'tool': measure.id_metric.tool,
+                'value': measure.value,
+                'description': measure.id_metric.description or '',
+            })
+
+    if selected_level in ['Clase', 'Todos']:
+        # MÉTRICAS A NIVEL DE CLASE
+        class_measures = ClassMeasure.objects.select_related(
+            'id_class__id_component__id_project', 'id_metric'
+        ).all()
+
+        for measure in class_measures:
+            measures_data.append({
+                'level': 'Clase',
+                'project_name': measure.id_class.id_component.id_project.name,
+                'project_key': measure.id_class.id_component.id_project.key,
+                'entity_name': measure.id_class.name,
+                'metric_name': measure.id_metric.name,
+                'metric_key': measure.id_metric.key,
+                'tool': measure.id_metric.tool,
+                'value': measure.value,
+                'description': measure.id_metric.description or '',
+            })
+
+    # Configurar paginación (50 items por página, ajusta según necesites)
+    items_per_page = 50
+    paginator = Paginator(measures_data, items_per_page)
+
+    try:
+        measures_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        measures_page = paginator.page(1)
+    except EmptyPage:
+        measures_page = paginator.page(paginator.num_pages)
 
     # Calcular estadísticas
     total_projects = projects.count()
-    total_measures = project_measures.count()
+    total_measures_all = len(measures_data)  # Total sin paginar
     total_tools = len(tools)
+
+    # Estadísticas por nivel (siempre calculadas para mostrar en cards)
+    total_project_measures = ProjectMeasure.objects.count()
+    total_component_measures = ComponentMeasure.objects.count()
+    total_class_measures = ClassMeasure.objects.count()
 
     # Último análisis
     last_analysis = Project.objects.filter(
@@ -502,11 +568,17 @@ def dashboardAnalisis(request):
         'projects': projects,
         'metrics': metrics,
         'tools': tools,
-        'measures': measures_data,
+        'measures': measures_page,  # Página actual
+        'paginator': paginator,
         'total_projects': total_projects,
-        'total_measures': total_measures,
+        'total_measures': total_measures_all,  # Total de métricas filtradas
         'total_tools': total_tools,
+        'total_project_measures': total_project_measures,
+        'total_component_measures': total_component_measures,
+        'total_class_measures': total_class_measures,
         'last_analysis': last_analysis,
+        'selected_level': selected_level,
+        'items_per_page': items_per_page,
     }
 
     return render(request, 'main/dashboardAnalisis.html', context)

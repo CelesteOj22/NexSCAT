@@ -6,6 +6,10 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       LAYOUT GENERAL
+       ============================================ */
+
     .dashboard-section {
         padding: 60px 0;
     }
@@ -14,6 +18,63 @@
         max-width: 1600px;
         margin: 0 auto;
     }
+
+    /* ============================================
+       LOADING OVERLAY
+       ============================================ */
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.2rem;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .loading-subtext {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    /* ============================================
+       HEADER
+       ============================================ */
 
     .dashboard-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -30,6 +91,10 @@
         font-weight: 600;
         color: white;
     }
+
+    /* ============================================
+       ESTADÍSTICAS
+       ============================================ */
 
     .stats-grid {
         display: grid;
@@ -69,6 +134,10 @@
         letter-spacing: 1px;
     }
 
+    /* ============================================
+       FILTROS
+       ============================================ */
+
     .filters-section {
         background: white;
         border-radius: 12px;
@@ -89,7 +158,7 @@
     }
 
     .filter-input {
-        border-radius: 8px;
+        border-radius: 12px;  /* Cambiar de 8px a 12px */
         border: 2px solid #e0e0e0;
         padding: 10px 15px;
         transition: all 0.3s ease;
@@ -98,39 +167,119 @@
     .filter-input:focus {
         border-color: #667eea;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        outline: none;
     }
 
-    .btn-reset {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        border: none;
-        padding: 10px 25px;
+    /* ============================================
+       TOOLTIPS
+       ============================================ */
+
+    /* Asegurar que todos los tooltips sean negros (estilo Bootstrap por defecto) */
+    .tooltip {
+        pointer-events: none;
+    }
+
+    .tooltip .tooltip-inner {
+        background-color: #000;
+        color: #fff;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+    }
+
+    .tooltip .tooltip-arrow::before {
+        border-top-color: #000;
+    }
+
+    /* ============================================
+       BOTONES
+       ============================================ */
+
+    .btn-icon-action {
+        background: white;
+        color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 2px solid #e0e0e0;
+        padding: 10px 15px;
         border-radius: 8px;
-        font-weight: 500;
+        font-size: 1.1rem;
         transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 46px;
+        height: 46px;
     }
 
-    .btn-reset:hover {
+    .btn-icon-action:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
-    .btn-export {
-        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-        color: white;
-        border: none;
-        padding: 10px 25px;
+    .btn-icon-action:active {
+        transform: translateY(0);
+    }
+
+    .btn-icon-action:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn-icon-action i {
+        font-size: 1.2rem;
+    }
+
+    /* Dropdown toggle específico */
+    .btn-icon-action.dropdown-toggle::after {
+        display: none;
+    }
+
+    /* ============================================
+       DROPDOWN EXPORTAR
+       ============================================ */
+
+    .dropdown-menu {
         border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        border: 2px solid #e0e0e0;
+        padding: 8px 0;
+        min-width: 200px;
     }
 
-    .btn-export:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    .dropdown-menu-end {
+        right: 0;
+        left: auto;
+    }
+
+    .dropdown-item {
+        padding: 10px 20px;
+        transition: all 0.2s ease;
+        color: #495057;
+        font-size: 0.95rem;
+    }
+
+    .dropdown-item:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
+
+    .dropdown-item:active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .dropdown-item i {
+        margin-right: 8px;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* ============================================
+       TABLA - ESTRUCTURA Y ANCHOS
+       ============================================ */
 
     .table-container {
         background: white;
@@ -139,9 +288,63 @@
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     }
 
-    .metrics-table {
-        margin-bottom: 0;
+    .table-responsive {
+        overflow-x: auto;
     }
+
+    .metrics-table {
+        width: 100%;
+        margin-bottom: 0;
+        table-layout: auto;
+        border-collapse: collapse;
+    }
+
+    /* Anchos mínimos por columna */
+    .metrics-table thead th:nth-child(1),
+    .metrics-table tbody td:nth-child(1) {
+        width: 110px;
+        min-width: 110px;
+    }
+
+    .metrics-table thead th:nth-child(2),
+    .metrics-table tbody td:nth-child(2) {
+        width: 150px;
+        min-width: 150px;
+    }
+
+    .metrics-table thead th:nth-child(3),
+    .metrics-table tbody td:nth-child(3) {
+        width: 200px;
+        min-width: 200px;
+    }
+
+    .metrics-table thead th:nth-child(4),
+    .metrics-table tbody td:nth-child(4) {
+        width: 180px;
+        min-width: 180px;
+    }
+
+    .metrics-table thead th:nth-child(5),
+    .metrics-table tbody td:nth-child(5) {
+        width: 130px;
+        min-width: 130px;
+    }
+
+    .metrics-table thead th:nth-child(6),
+    .metrics-table tbody td:nth-child(6) {
+        width: 100px;
+        min-width: 100px;
+    }
+
+    .metrics-table thead th:nth-child(7),
+    .metrics-table tbody td:nth-child(7) {
+        width: auto;
+        min-width: 200px;
+    }
+
+    /* ============================================
+       TABLA - ENCABEZADOS
+       ============================================ */
 
     .metrics-table thead {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -150,7 +353,7 @@
 
     .metrics-table thead th {
         border: none;
-        padding: 15px;
+        padding: 15px 10px;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.85rem;
@@ -158,16 +361,25 @@
         cursor: pointer;
         user-select: none;
         vertical-align: middle;
+        white-space: nowrap;
+        position: relative;
     }
 
     .metrics-table thead th:hover {
         background: rgba(255, 255, 255, 0.1);
     }
 
+    /* Flechas siempre inline con el texto */
     .metrics-table thead th i {
+        display: inline-block;
         margin-left: 5px;
         font-size: 0.7rem;
+        vertical-align: middle;
     }
+
+    /* ============================================
+       TABLA - CELDAS
+       ============================================ */
 
     .metrics-table tbody tr {
         transition: all 0.2s ease;
@@ -175,37 +387,152 @@
 
     .metrics-table tbody tr:hover {
         background-color: #f8f9fa;
-        transform: scale(1.005);
+        transform: scale(1.002);
     }
 
     .metrics-table td {
-        padding: 15px;
+        padding: 12px 10px;
         vertical-align: middle;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
     }
+
+    /* ============================================
+       TABLA - ESTILOS DE CONTENIDO
+       ============================================ */
 
     .project-name {
         font-weight: 600;
         color: #212529;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .entity-name {
+        color: #6c757d;
+        font-size: 0.9rem;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     .metric-name {
         color: #495057;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     .metric-value {
         font-weight: 600;
         color: #667eea;
         font-size: 1.05rem;
+        text-align: center;
     }
 
-    .pagination-info {
+    /* Descripción */
+    .metrics-table td:nth-child(7) small {
+        font-size: 0.85rem;
+        color: #6c757d;
+        display: block;
+        word-wrap: break-word;
+    }
+
+    /* ============================================
+       BADGES
+       ============================================ */
+
+    .badge-level,
+    .tool-badge {
+        display: inline-block;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .badge-level {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-level.proyecto {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .badge-level.componente {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .badge-level.clase {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    /* ============================================
+       PAGINACIÓN
+       ============================================ */
+
+    .pagination-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
+        padding: 20px;
         background: #f8f9fa;
         border-top: 1px solid #dee2e6;
     }
+
+    .pagination {
+        margin: 0;
+    }
+
+    .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 3px;
+        border: 2px solid #e0e0e0;
+        color: #667eea;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .pagination .page-link:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background: #f8f9fa;
+        border-color: #e0e0e0;
+    }
+
+    .page-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .page-info strong {
+        color: #212529;
+    }
+
+    /* ============================================
+       ESTADO VACÍO
+       ============================================ */
 
     .no-results {
         text-align: center;
@@ -219,13 +546,40 @@
         opacity: 0.3;
     }
 
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+
+    @media (max-width: 1400px) {
+        .metrics-table thead th:nth-child(2),
+        .metrics-table tbody td:nth-child(2) {
+            width: 130px;
+            min-width: 130px;
+        }
+
+        .metrics-table thead th:nth-child(3),
+        .metrics-table tbody td:nth-child(3) {
+            width: 170px;
+            min-width: 170px;
+        }
+    }
+
     @media (max-width: 992px) {
-        .table-container {
-            overflow-x: auto;
+        .metrics-table {
+            min-width: 1100px;
         }
 
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* Alinear botones de acción verticalmente en tablets */
+        .filter-group:last-child .d-flex {
+            flex-direction: column;
+        }
+
+        .btn-icon-action {
+            width: 100%;
         }
     }
 
@@ -242,20 +596,42 @@
             font-size: 2rem;
         }
 
-        .pagination-info {
+        .pagination-container {
             flex-direction: column;
             gap: 10px;
+        }
+
+        /* En móviles, botones ocupan todo el ancho */
+        .filter-group:last-child {
+            margin-top: 15px;
+        }
+
+        .filter-group:last-child .d-flex {
+            flex-direction: row;
+            gap: 10px !important;
+        }
+
+        .filter-group:last-child .btn-icon-action,
+        .filter-group:last-child .btn-group {
+            flex: 1;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay active" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando métricas...</div>
+    <div class="loading-subtext">Por favor espera un momento</div>
+</div>
+
 <div class="dashboard-section">
     <div class="container-xxl px-lg-5 dashboard-container">
         <!-- Header -->
         <div class="dashboard-header">
-            <h1>📊 Dashboard de Análisis</h1>
+            <h1>Dashboard de Análisis</h1>
             <p class="mb-0">Vista general de todos los proyectos analizados</p>
         </div>
 
@@ -266,12 +642,8 @@
                 <div class="number">{{ total_projects }}</div>
             </div>
             <div class="stat-card">
-                <div class="label">Métricas Totales</div>
+                <div class="label">Total de Métricas a Nivel de {{selected_level}}</div>
                 <div class="number">{{ total_measures }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Herramientas</div>
-                <div class="number">{{ total_tools }}</div>
             </div>
             <div class="stat-card">
                 <div class="label">Último Análisis</div>
@@ -287,110 +659,214 @@
 
         <!-- Filtros -->
         <div class="filters-section">
-            <h5 class="mb-3">🔍 Filtros</h5>
             <div class="row">
-                <div class="col-md-3 filter-group">
-                    <label for="filterSearch">Búsqueda General</label>
+                <div class="col-lg-2 col-md-4 filter-group">
+                    <label for="filterSearch">Búsqueda</label>
                     <input type="text" id="filterSearch" class="form-control filter-input"
                            placeholder="Buscar...">
                 </div>
-                <div class="col-md-3 filter-group">
+                <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterProject">Proyecto</label>
                     <select id="filterProject" class="form-select filter-input">
-                        <option value="">Todos los proyectos</option>
+                        <option value="">Todos</option>
                         {% for project in projects %}
                         <option value="{{ project.name }}">{{ project.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3 filter-group">
+                <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterMetric">Métrica</label>
                     <select id="filterMetric" class="form-select filter-input">
-                        <option value="">Todas las métricas</option>
+                        <option value="">Todas</option>
                         {% for metric in metrics %}
                         <option value="{{ metric.name }}">{{ metric.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3 filter-group">
+                <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterTool">Herramienta</label>
                     <select id="filterTool" class="form-select filter-input">
-                        <option value="">Todas las herramientas</option>
+                        <option value="">Todas</option>
                         {% for tool in tools %}
                         <option value="{{ tool }}">{{ tool }}</option>
                         {% endfor %}
                     </select>
                 </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-12 d-flex gap-2">
-                    <button class="btn btn-reset" onclick="resetFilters()">
-                        <i class="bi bi-arrow-clockwise"></i> Limpiar Filtros
-                    </button>
-                    <button class="btn btn-export" onclick="exportToCSV()">
-                        <i class="bi bi-download"></i> Exportar CSV
-                    </button>
+                <div class="col-lg-2 col-md-4 filter-group">
+                    <label for="filterLevel">Nivel</label>
+                    <select id="filterLevel" class="form-select filter-input" onchange="changeLevel()">
+                        <option value="Proyecto" {% if selected_level == 'Proyecto' %}selected{% endif %}>Proyecto</option>
+                        <option value="Componente" {% if selected_level == 'Componente' %}selected{% endif %}>Componente</option>
+                        <option value="Clase" {% if selected_level == 'Clase' %}selected{% endif %}>Clase</option>
+                        <option value="Todos" {% if selected_level == 'Todos' %}selected{% endif %}>Todos ⚠️</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 filter-group">
+                    <label>Acciones</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-icon-action" onclick="resetFilters()"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="Limpiar filtros">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-icon-action dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    data-bs-original-title="Exportar datos">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="exportToCSV(); return false;">
+                                    <i class="bi bi-filetype-csv"></i> Exportar como CSV
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportToJSON(); return false;">
+                                    <i class="bi bi-filetype-json"></i> Exportar como JSON
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportToXML(); return false;">
+                                    <i class="bi bi-filetype-xml"></i> Exportar como XML
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Tabla de Métricas -->
         <div class="table-container">
-            <table class="table metrics-table" id="metricsTable">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Proyecto <i class="bi bi-caret-down-fill"></i></th>
-                        <th onclick="sortTable(1)">Métrica <i class="bi bi-caret-down-fill"></i></th>
-                        <th onclick="sortTable(2)">Herramienta <i class="bi bi-caret-down-fill"></i></th>
-                        <th onclick="sortTable(3)">Valor <i class="bi bi-caret-down-fill"></i></th>
-                        <th>Descripción</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    {% for measure in measures %}
-                    <tr data-project="{{ measure.project_name }}"
-                        data-metric="{{ measure.metric_name }}"
-                        data-tool="{{ measure.tool }}">
-                        <td class="project-name">{{ measure.project_name }}</td>
-                        <td class="metric-name">{{ measure.metric_name }}</td>
-                        <td>
-                            <span class="tool-badge {{ measure.tool|lower }}">
-                                {{ measure.tool }}
-                            </span>
-                        </td>
-                        <td class="metric-value">{{ measure.value }}</td>
-                        <td>
-                            <small class="text-muted">
-                                {{ measure.description|default:"—"|truncatewords:10 }}
-                            </small>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5">
-                            <div class="no-results">
-                                <i class="bi bi-inbox"></i>
-                                <h4>No hay métricas disponibles</h4>
-                                <p>Importa proyectos para ver sus métricas aquí</p>
-                                <a href="{% url 'main:importarProyecto' %}" class="btn btn-primary-gradient mt-3">
-                                    <i class="bi bi-plus-circle"></i> Importar Proyectos
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover metrics-table" id="metricsTable">
+                    <thead>
+                        <tr>
+                            <th scope="col" onclick="sortTable(0)">Nivel <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col" onclick="sortTable(1)">Proyecto <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col" onclick="sortTable(2)">Entidad <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col" onclick="sortTable(3)">Métrica <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col" onclick="sortTable(4)">Herramienta <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col" onclick="sortTable(5)">Valor <i class="bi bi-caret-down-fill"></i></th>
+                            <th scope="col">Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for measure in measures %}
+                        <tr data-project="{{ measure.project_name }}"
+                            data-metric="{{ measure.metric_name }}"
+                            data-tool="{{ measure.tool }}"
+                            data-level="{{ measure.level }}">
+                            <td>
+                                <span class="badge-level {{ measure.level|lower }}">
+                                    {{ measure.level }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="project-name" title="{{ measure.project_name }}">
+                                    {{ measure.project_name }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="entity-name" title="{{ measure.entity_name|default:'—' }}">
+                                    {{ measure.entity_name|default:"—" }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-name" title="{{ measure.metric_name }}">
+                                    {{ measure.metric_name }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="tool-badge {{ measure.tool|lower }}" title="{{ measure.tool }}">
+                                    {{ measure.tool }}
+                                </span>
+                            </td>
+                            <td class="metric-value">{{ measure.value }}</td>
+                            <td>
+                                <small class="text-muted" title="{{ measure.description|default:'—' }}">
+                                    {{ measure.description|default:"—"|truncatewords:15 }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="no-results">
+                                    <i class="bi bi-inbox"></i>
+                                    <h4>No hay métricas disponibles</h4>
+                                    <p>Importa proyectos para ver sus métricas aquí</p>
+                                    <a href="{% url 'main:importarProyecto' %}" class="btn btn-primary-gradient mt-3">
+                                        <i class="bi bi-plus-circle"></i> Importar Proyectos
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-            <!-- Paginación Info -->
+            <!-- Paginación -->
             {% if measures %}
-            <div class="pagination-info">
-                <span id="showingInfo">
-                    Mostrando <strong id="visibleRows">0</strong> de <strong id="totalRows">{{ measures|length }}</strong> registros
-                </span>
-                <span id="filteredInfo" style="display: none;">
-                    (filtrado de <strong>{{ measures|length }}</strong> registros totales)
-                </span>
+            <div class="pagination-container">
+                <div class="page-info">
+                    Mostrando <strong>{{ measures.start_index }}</strong> a <strong>{{ measures.end_index }}</strong>
+                    de <strong>{{ total_measures }}</strong> métricas
+                </div>
+
+                {% if paginator.num_pages > 1 %}
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination mb-0">
+                        {% if measures.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?level={{ selected_level }}&page=1" aria-label="Primera">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?level={{ selected_level }}&page={{ measures.previous_page_number }}" aria-label="Anterior">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                        </li>
+                        {% endif %}
+
+                        {% for num in paginator.page_range %}
+                            {% if measures.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > measures.number|add:'-3' and num < measures.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?level={{ selected_level }}&page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if measures.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?level={{ selected_level }}&page={{ measures.next_page_number }}" aria-label="Siguiente">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?level={{ selected_level }}&page={{ paginator.num_pages }}" aria-label="Última">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -407,18 +883,78 @@
 
 {% block extra_js %}
 <script>
-    // Filtrado de tabla
+    // ============================================
+    // LOADING OVERLAY
+    // ============================================
+
+    function showLoading(message = 'Cargando métricas...', subtext = 'Por favor espera un momento') {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+
+        const textElement = overlay.querySelector('.loading-text');
+        const subtextElement = overlay.querySelector('.loading-subtext');
+
+        if (textElement) textElement.textContent = message;
+        if (subtextElement) subtextElement.textContent = subtext;
+
+        overlay.classList.add('active');
+    }
+
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+
+        overlay.classList.remove('active');
+    }
+
+    // ============================================
+    // CAMBIO DE NIVEL
+    // ============================================
+
+    function changeLevel() {
+        const selectElement = document.getElementById('filterLevel');
+        if (!selectElement) return;
+
+        const level = selectElement.value;
+
+        // Advertencia si selecciona "Todos"
+        if (level === 'Todos') {
+            const confirmed = confirm('⚠️ Cargar todas las métricas puede tardar varios segundos. ¿Deseas continuar?');
+            if (!confirmed) {
+                selectElement.value = '{{ selected_level }}';
+                return;
+            }
+        }
+
+        // Mostrar loading antes de recargar
+        showLoading('Cambiando nivel de análisis...', 'Cargando ' + level.toLowerCase());
+
+        // Dar tiempo para que se vea el loading antes de recargar
+        setTimeout(() => {
+            window.location.href = '?level=' + encodeURIComponent(level);
+        }, 100);
+    }
+
+    // ============================================
+    // FILTRADO DE TABLA
+    // ============================================
+
     function filterTable() {
-        const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
-        const projectFilter = document.getElementById('filterProject').value.toLowerCase();
-        const metricFilter = document.getElementById('filterMetric').value.toLowerCase();
-        const toolFilter = document.getElementById('filterTool').value.toLowerCase();
+        const searchTerm = document.getElementById('filterSearch')?.value.toLowerCase() || '';
+        const projectFilter = document.getElementById('filterProject')?.value.toLowerCase() || '';
+        const metricFilter = document.getElementById('filterMetric')?.value.toLowerCase() || '';
+        const toolFilter = document.getElementById('filterTool')?.value.toLowerCase() || '';
 
         const tbody = document.getElementById('tableBody');
+        if (!tbody) return;
+
         const rows = tbody.getElementsByTagName('tr');
         let visibleCount = 0;
 
         for (let row of rows) {
+            // Skip empty rows or rows without data attributes
+            if (!row.getAttribute('data-project')) continue;
+
             const project = row.getAttribute('data-project')?.toLowerCase() || '';
             const metric = row.getAttribute('data-metric')?.toLowerCase() || '';
             const tool = row.getAttribute('data-tool')?.toLowerCase() || '';
@@ -436,10 +972,6 @@
                 row.style.display = 'none';
             }
         }
-
-        document.getElementById('visibleRows').textContent = visibleCount;
-        const hasFilters = searchTerm || projectFilter || metricFilter || toolFilter;
-        document.getElementById('filteredInfo').style.display = hasFilters ? 'inline' : 'none';
     }
 
     function resetFilters() {
@@ -450,11 +982,20 @@
         filterTable();
     }
 
+    // ============================================
+    // ORDENAMIENTO
+    // ============================================
+
     let sortDirection = {};
+
     function sortTable(columnIndex) {
         const table = document.getElementById('metricsTable');
+        if (!table) return;
+
         const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
+        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row =>
+            row.style.display !== 'none' && row.getAttribute('data-project')
+        );
 
         sortDirection[columnIndex] = !sortDirection[columnIndex];
         const ascending = sortDirection[columnIndex];
@@ -490,47 +1031,175 @@
         });
     }
 
+    // ============================================
+    // EXPORTACIÓN
+    // ============================================
+
     function exportToCSV() {
-        const table = document.getElementById('metricsTable');
-        const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+        showLoading('Exportando a CSV...', 'Generando archivo');
 
-        let csv = 'Proyecto,Métrica,Herramienta,Valor,Descripción\n';
+        setTimeout(() => {
+            const table = document.getElementById('metricsTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row =>
+                row.style.display !== 'none' && row.getAttribute('data-project')
+            );
 
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const rowData = Array.from(cells).map(cell => {
-                let text = cell.textContent.trim();
-                text = text.replace(/"/g, '""');
-                if (text.includes(',')) {
-                    text = `"${text}"`;
-                }
-                return text;
+            let csv = 'Nivel,Proyecto,Entidad,Métrica,Herramienta,Valor,Descripción\n';
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = Array.from(cells).map(cell => {
+                    let text = cell.textContent.trim();
+                    text = text.replace(/"/g, '""');
+                    if (text.includes(',')) {
+                        text = `"${text}"`;
+                    }
+                    return text;
+                });
+                csv += rowData.join(',') + '\n';
             });
-            csv += rowData.join(',') + '\n';
-        });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `metricas_${new Date().toISOString().slice(0,10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `metricas_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            hideLoading();
+        }, 500);
     }
 
-    document.getElementById('filterSearch')?.addEventListener('input', filterTable);
-    document.getElementById('filterProject')?.addEventListener('change', filterTable);
-    document.getElementById('filterMetric')?.addEventListener('change', filterTable);
-    document.getElementById('filterTool')?.addEventListener('change', filterTable);
+    function exportToJSON() {
+        showLoading('Exportando a JSON...', 'Generando archivo');
+
+        setTimeout(() => {
+            const table = document.getElementById('metricsTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row =>
+                row.style.display !== 'none' && row.getAttribute('data-project')
+            );
+
+            const data = rows.map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    nivel: cells[0]?.textContent.trim(),
+                    proyecto: cells[1]?.textContent.trim(),
+                    entidad: cells[2]?.textContent.trim(),
+                    metrica: cells[3]?.textContent.trim(),
+                    herramienta: cells[4]?.textContent.trim(),
+                    valor: cells[5]?.textContent.trim(),
+                    descripcion: cells[6]?.textContent.trim()
+                };
+            });
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `metricas_${new Date().toISOString().slice(0,10)}.json`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            hideLoading();
+        }, 500);
+    }
+
+    function exportToXML() {
+        showLoading('Exportando a XML...', 'Generando archivo');
+
+        setTimeout(() => {
+            const table = document.getElementById('metricsTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row =>
+                row.style.display !== 'none' && row.getAttribute('data-project')
+            );
+
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += '<metricas>\n';
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                xml += '  <metrica>\n';
+                xml += `    <nivel>${escapeXML(cells[0]?.textContent.trim())}</nivel>\n`;
+                xml += `    <proyecto>${escapeXML(cells[1]?.textContent.trim())}</proyecto>\n`;
+                xml += `    <entidad>${escapeXML(cells[2]?.textContent.trim())}</entidad>\n`;
+                xml += `    <nombre>${escapeXML(cells[3]?.textContent.trim())}</nombre>\n`;
+                xml += `    <herramienta>${escapeXML(cells[4]?.textContent.trim())}</herramienta>\n`;
+                xml += `    <valor>${escapeXML(cells[5]?.textContent.trim())}</valor>\n`;
+                xml += `    <descripcion>${escapeXML(cells[6]?.textContent.trim())}</descripcion>\n`;
+                xml += '  </metrica>\n';
+            });
+
+            xml += '</metricas>';
+
+            const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `metricas_${new Date().toISOString().slice(0,10)}.xml`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            hideLoading();
+        }, 500);
+    }
+
+    function escapeXML(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
 
     document.addEventListener('DOMContentLoaded', function() {
-        const totalRows = document.querySelectorAll('#tableBody tr').length;
-        if (document.getElementById('visibleRows')) {
-            document.getElementById('visibleRows').textContent = totalRows;
-            document.getElementById('totalRows').textContent = totalRows;
+        // Filtros (NO incluir filterLevel aquí)
+        const filterSearch = document.getElementById('filterSearch');
+        const filterProject = document.getElementById('filterProject');
+        const filterMetric = document.getElementById('filterMetric');
+        const filterTool = document.getElementById('filterTool');
+
+        if (filterSearch) filterSearch.addEventListener('input', filterTable);
+        if (filterProject) filterProject.addEventListener('change', filterTable);
+        if (filterMetric) filterMetric.addEventListener('change', filterTable);
+        if (filterTool) filterTool.addEventListener('change', filterTable);
+
+        // Inicializar tooltips de Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Inicializar tooltip para el botón de exportar (que es dropdown)
+        const exportButton = document.querySelector('.btn-icon-action.dropdown-toggle');
+        if (exportButton && exportButton.hasAttribute('data-bs-original-title')) {
+            const tooltip = new bootstrap.Tooltip(exportButton, {
+                title: exportButton.getAttribute('data-bs-original-title'),
+                placement: 'top',
+                trigger: 'hover'
+            });
         }
+
+        // Ocultar loading cuando todo esté listo
+        hideLoading();
+    });
+
+    // Mostrar loading al cambiar de página
+    window.addEventListener('beforeunload', function() {
+        showLoading('Cargando...', 'Un momento por favor');
     });
 </script>
 {% endblock %}
