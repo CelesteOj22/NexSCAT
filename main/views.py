@@ -3,17 +3,12 @@ import pathlib
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-# para renderizar templates?
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.db.models import Max
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from .models import Metric, Project, SonarToken, Component, ProjectMeasure, ComponentMeasure, ClassMeasure
+from .models import Metric, Component, ProjectMeasure, ComponentMeasure, ClassMeasure
 from main.services.factory import sonar, source
 from .forms import SonarTokenForm
 
@@ -28,6 +23,19 @@ from django.http import StreamingHttpResponse
 import logging
 logger = logging.getLogger(__name__)
 
+# Imports de Django
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+
+
+# Imports de tus modelos
+from main.models import SonarToken, Project
+
+
+
 
 def homepage(request):
     # print(Projects.objects.all().query)
@@ -37,7 +45,7 @@ def homepage(request):
     # metrics1 = Metrics.objects.all()
     # print(metrics1)  # Verifica los resultados en la consola
     # parametros de render(request,template,content/data)
-    return render(request=request, template_name="main/Index.html", context={"metrics": Metric.objects.all})
+    return render(request=request, template_name="main/Index.html")
 
 @login_required
 def estado_herramientas(request):
@@ -45,7 +53,6 @@ def estado_herramientas(request):
     Vista para verificar el estado de las herramientas de análisis
     """
     # Obtener token del usuario
-    token_obj = None
     token = None
     try:
         token_obj = SonarToken.objects.get(user=request.user)

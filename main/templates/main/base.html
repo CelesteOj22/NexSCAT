@@ -1,6 +1,5 @@
 <!-- templates/main/base.html -->
 {% load static %}
-<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -48,6 +47,10 @@
     /* Páginas con hero sin padding */
     body.no-padding-top {
         padding-top: 0 !important;
+    }
+
+    body.not-authenticated {
+        padding-top: 110px; /* Más espacio cuando no está logueado */
     }
 
     /* ============================================
@@ -161,7 +164,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body {% block body_attributes %}{% endblock %}>
+<body {% block body_attributes %}{% if not user.is_authenticated %}class="not-authenticated"{% endif %}{% endblock %}>
     <div class="container-xxl bg-white p-0">
         <!-- Spinner Start -->
         <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
@@ -182,17 +185,17 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarCollapse">
                     <div class="navbar-nav mx-auto py-0">
-                        <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                            Home
-                        </a>
                         {% if user.is_authenticated %}
+                            <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                                Home
+                            </a>
                             <a href="{% url 'main:importarProyecto' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'importarProyecto' %}active{% endif %}">
                                 Importar Proyecto
                             </a>
+                            <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">
+                                Proyectos Analizados
+                            </a>
                         {% endif %}
-                        <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">
-                            Proyectos Analizados
-                        </a>
                     </div>
 
                     {% if user.is_authenticated %}

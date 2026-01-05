@@ -919,7 +919,7 @@
 
         // Advertencia si selecciona "Todos"
         if (level === 'Todos') {
-            const confirmed = confirm('⚠️ Cargar todas las métricas puede tardar varios segundos. ¿Deseas continuar?');
+            const confirmed = confirm('Cargar todas las métricas puede tardar varios segundos. ¿Deseas continuar?');
             if (!confirmed) {
                 selectElement.value = '{{ selected_level }}';
                 return;
