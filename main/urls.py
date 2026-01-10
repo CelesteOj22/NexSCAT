@@ -44,4 +44,6 @@ urlpatterns = [
     path('users/get/<int:user_id>/', views.get_user, name='get_user'),
     path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
     path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
+
+    path('api/export/hierarchical/', views.obtener_datos_jerarquicos, name='export_hierarchical'),
 ]

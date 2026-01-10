@@ -1,4 +1,4 @@
-<!-- templates/main/dashboardAnalisis.html -->
+<!-- templates/main/dashboardAnalisisJerarquico.html -->
 {% extends 'main/base.html' %}
 {% load static %}
 
@@ -7,7 +7,7 @@
 {% block extra_css %}
 <style>
     /* ============================================
-       LAYOUT GENERAL
+       ESTILOS HEREDADOS (mantener los existentes)
        ============================================ */
 
     .dashboard-section {
@@ -19,10 +19,7 @@
         margin: 0 auto;
     }
 
-    /* ============================================
-       LOADING OVERLAY
-       ============================================ */
-
+    /* Loading overlay - mantener igual */
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -72,10 +69,7 @@
         color: #6c757d;
     }
 
-    /* ============================================
-       HEADER
-       ============================================ */
-
+    /* Dashboard header - mantener igual */
     .dashboard-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -92,10 +86,7 @@
         color: white;
     }
 
-    /* ============================================
-       ESTADÍSTICAS
-       ============================================ */
-
+    /* Stats cards - mantener igual */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -134,10 +125,7 @@
         letter-spacing: 1px;
     }
 
-    /* ============================================
-       FILTROS
-       ============================================ */
-
+    /* Filtros - mantener igual */
     .filters-section {
         background: white;
         border-radius: 12px;
@@ -158,7 +146,7 @@
     }
 
     .filter-input {
-        border-radius: 12px;  /* Cambiar de 8px a 12px */
+        border-radius: 12px;
         border: 2px solid #e0e0e0;
         padding: 10px 15px;
         transition: all 0.3s ease;
@@ -170,31 +158,7 @@
         outline: none;
     }
 
-    /* ============================================
-       TOOLTIPS
-       ============================================ */
-
-    /* Asegurar que todos los tooltips sean negros (estilo Bootstrap por defecto) */
-    .tooltip {
-        pointer-events: none;
-    }
-
-    .tooltip .tooltip-inner {
-        background-color: #000;
-        color: #fff;
-        font-size: 0.875rem;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.375rem;
-    }
-
-    .tooltip .tooltip-arrow::before {
-        border-top-color: #000;
-    }
-
-    /* ============================================
-       BOTONES
-       ============================================ */
-
+    /* Botones - mantener igual */
     .btn-icon-action {
         background: white;
         color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -219,10 +183,6 @@
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
-    .btn-icon-action:active {
-        transform: translateY(0);
-    }
-
     .btn-icon-action:focus {
         outline: none;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
@@ -232,15 +192,11 @@
         font-size: 1.2rem;
     }
 
-    /* Dropdown toggle específico */
     .btn-icon-action.dropdown-toggle::after {
         display: none;
     }
 
-    /* ============================================
-       DROPDOWN EXPORTAR
-       ============================================ */
-
+    /* Dropdown - mantener igual */
     .dropdown-menu {
         border-radius: 8px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -266,11 +222,6 @@
         color: white;
     }
 
-    .dropdown-item:active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
     .dropdown-item i {
         margin-right: 8px;
         width: 20px;
@@ -278,7 +229,7 @@
     }
 
     /* ============================================
-       TABLA - ESTRUCTURA Y ANCHOS
+       NUEVOS ESTILOS PARA TABLA JERÁRQUICA
        ============================================ */
 
     .table-container {
@@ -288,179 +239,170 @@
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     }
 
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .metrics-table {
+    .hierarchical-table {
         width: 100%;
         margin-bottom: 0;
-        table-layout: auto;
         border-collapse: collapse;
     }
 
-    /* Anchos mínimos por columna */
-    .metrics-table thead th:nth-child(1),
-    .metrics-table tbody td:nth-child(1) {
-        width: 110px;
-        min-width: 110px;
-    }
-
-    .metrics-table thead th:nth-child(2),
-    .metrics-table tbody td:nth-child(2) {
-        width: 150px;
-        min-width: 150px;
-    }
-
-    .metrics-table thead th:nth-child(3),
-    .metrics-table tbody td:nth-child(3) {
-        width: 200px;
-        min-width: 200px;
-    }
-
-    .metrics-table thead th:nth-child(4),
-    .metrics-table tbody td:nth-child(4) {
-        width: 180px;
-        min-width: 180px;
-    }
-
-    .metrics-table thead th:nth-child(5),
-    .metrics-table tbody td:nth-child(5) {
-        width: 130px;
-        min-width: 130px;
-    }
-
-    .metrics-table thead th:nth-child(6),
-    .metrics-table tbody td:nth-child(6) {
-        width: 100px;
-        min-width: 100px;
-    }
-
-    .metrics-table thead th:nth-child(7),
-    .metrics-table tbody td:nth-child(7) {
-        width: auto;
-        min-width: 200px;
-    }
-
-    /* ============================================
-       TABLA - ENCABEZADOS
-       ============================================ */
-
-    .metrics-table thead {
+    /* Encabezados */
+    .hierarchical-table thead {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
-    .metrics-table thead th {
+    .hierarchical-table thead th {
         border: none;
         padding: 15px 10px;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.85rem;
         letter-spacing: 0.5px;
-        cursor: pointer;
-        user-select: none;
         vertical-align: middle;
         white-space: nowrap;
-        position: relative;
     }
 
-    .metrics-table thead th:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Flechas siempre inline con el texto */
-    .metrics-table thead th i {
-        display: inline-block;
-        margin-left: 5px;
-        font-size: 0.7rem;
-        vertical-align: middle;
-    }
-
-    /* ============================================
-       TABLA - CELDAS
-       ============================================ */
-
-    .metrics-table tbody tr {
+    /* Filas */
+    .hierarchical-table tbody tr {
         transition: all 0.2s ease;
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .metrics-table tbody tr:hover {
+    .hierarchical-table tbody tr:hover {
         background-color: #f8f9fa;
-        transform: scale(1.002);
     }
 
-    .metrics-table td {
+    .hierarchical-table td {
         padding: 12px 10px;
         vertical-align: middle;
-        word-wrap: break-word;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
     }
 
-    /* ============================================
-       TABLA - ESTILOS DE CONTENIDO
-       ============================================ */
+    /* Niveles jerárquicos con indentación */
+    .hierarchy-level-0 {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .hierarchy-level-1 {
+        padding-left: 40px !important;
+    }
+
+    .hierarchy-level-2 {
+        padding-left: 60px !important;
+    }
+
+    .hierarchy-level-3 {
+        padding-left: 80px !important;
+    }
+
+    /* Expand/Collapse icons */
+    .expand-icon {
+        cursor: pointer;
+        margin-right: 8px;
+        transition: transform 0.2s ease;
+        display: inline-block;
+        width: 20px;
+        text-align: center;
+        color: #667eea;
+        font-size: 0.9rem;
+    }
+
+    .expand-icon.expanded {
+        transform: rotate(90deg);
+    }
+
+    .expand-icon:hover {
+        color: #764ba2;
+    }
+
+    /* Filas hijas (hidden por defecto) */
+    .child-row {
+        display: none;
+    }
+
+    .child-row.visible {
+        display: table-row;
+    }
+
+    /* Project row (nivel 0) */
+    .project-row {
+        font-weight: 600;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    }
+
+    .project-row td {
+        border-bottom: 2px solid #667eea;
+    }
 
     .project-name {
+        font-size: 1.1rem;
+        color: #667eea;
         font-weight: 600;
-        color: #212529;
-        word-wrap: break-word;
-        word-break: break-word;
-        overflow-wrap: break-word;
     }
 
-    .entity-name {
-        color: #6c757d;
-        font-size: 0.9rem;
-        word-wrap: break-word;
-        word-break: break-word;
-        overflow-wrap: break-word;
+    /* Measure rows (métricas) */
+    .measure-row {
+        font-size: 0.95rem;
     }
 
-    .metric-name {
+    .measure-name {
         color: #495057;
-        word-wrap: break-word;
-        word-break: break-word;
-        overflow-wrap: break-word;
     }
 
-    .metric-value {
+    .measure-value {
         font-weight: 600;
         color: #667eea;
         font-size: 1.05rem;
         text-align: center;
     }
 
-    /* Descripción */
-    .metrics-table td:nth-child(7) small {
-        font-size: 0.85rem;
-        color: #6c757d;
-        display: block;
-        word-wrap: break-word;
+    /* Component row (nivel 1) */
+    .component-row {
+        background-color: rgba(79, 172, 254, 0.08);
     }
 
-    /* ============================================
-       BADGES
-       ============================================ */
-
-    .badge-level,
-    .tool-badge {
-        display: inline-block;
-        max-width: 100%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .component-name {
+        font-weight: 600;
+        color: #4facfe;
+        cursor: help;
     }
 
+    .component-name:hover {
+        color: #00f2fe;
+        text-decoration: underline;
+    }
+
+    /* Tooltip más ancho para paths largos */
+    .tooltip-inner {
+        max-width: 400px;
+        text-align: left;
+    }
+
+    /* Class row (nivel 2) */
+    .class-row {
+        background-color: rgba(92, 184, 92, 0.08);
+    }
+
+    .class-name {
+        color: #5cb85c;
+        font-weight: 600;
+        cursor: help;
+    }
+
+    .class-name:hover {
+        color: #449d44;
+        text-decoration: underline;
+    }
+
+    /* Badges */
     .badge-level {
-        padding: 6px 12px;
+        padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        display: inline-block;
     }
 
     .badge-level.proyecto {
@@ -469,71 +411,16 @@
     }
 
     .badge-level.componente {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-    }
-
-    .badge-level.clase {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         color: white;
     }
 
-    /* ============================================
-       PAGINACIÓN
-       ============================================ */
-
-    .pagination-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        background: #f8f9fa;
-        border-top: 1px solid #dee2e6;
-    }
-
-    .pagination {
-        margin: 0;
-    }
-
-    .pagination .page-link {
-        border-radius: 8px;
-        margin: 0 3px;
-        border: 2px solid #e0e0e0;
-        color: #667eea;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .pagination .page-link:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .badge-level.clase {
+        background: linear-gradient(135deg, #5cb85c 0%, #449d44 100%);
         color: white;
-        border-color: #667eea;
-        transform: translateY(-2px);
     }
 
-    .pagination .page-item.active .page-link {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        background: #f8f9fa;
-        border-color: #e0e0e0;
-    }
-
-    .page-info {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    .page-info strong {
-        color: #212529;
-    }
-
-    /* ============================================
-       ESTADO VACÍO
-       ============================================ */
-
+    /* Estado vacío */
     .no-results {
         text-align: center;
         padding: 60px 20px;
@@ -546,40 +433,26 @@
         opacity: 0.3;
     }
 
-    /* ============================================
-       RESPONSIVE
-       ============================================ */
-
-    @media (max-width: 1400px) {
-        .metrics-table thead th:nth-child(2),
-        .metrics-table tbody td:nth-child(2) {
-            width: 130px;
-            min-width: 130px;
-        }
-
-        .metrics-table thead th:nth-child(3),
-        .metrics-table tbody td:nth-child(3) {
-            width: 170px;
-            min-width: 170px;
-        }
-    }
-
+    /* Responsive */
     @media (max-width: 992px) {
-        .metrics-table {
-            min-width: 1100px;
-        }
-
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
         }
 
-        /* Alinear botones de acción verticalmente en tablets */
-        .filter-group:last-child .d-flex {
-            flex-direction: column;
+        .hierarchical-table {
+            font-size: 0.9rem;
         }
 
-        .btn-icon-action {
-            width: 100%;
+        .hierarchy-level-1 {
+            padding-left: 30px !important;
+        }
+
+        .hierarchy-level-2 {
+            padding-left: 50px !important;
+        }
+
+        .hierarchy-level-3 {
+            padding-left: 70px !important;
         }
     }
 
@@ -596,24 +469,20 @@
             font-size: 2rem;
         }
 
-        .pagination-container {
-            flex-direction: column;
-            gap: 10px;
+        .hierarchical-table {
+            font-size: 0.85rem;
         }
 
-        /* En móviles, botones ocupan todo el ancho */
-        .filter-group:last-child {
-            margin-top: 15px;
+        .hierarchy-level-1 {
+            padding-left: 20px !important;
         }
 
-        .filter-group:last-child .d-flex {
-            flex-direction: row;
-            gap: 10px !important;
+        .hierarchy-level-2 {
+            padding-left: 35px !important;
         }
 
-        .filter-group:last-child .btn-icon-action,
-        .filter-group:last-child .btn-group {
-            flex: 1;
+        .hierarchy-level-3 {
+            padding-left: 50px !important;
         }
     }
 </style>
@@ -632,7 +501,7 @@
         <!-- Header -->
         <div class="dashboard-header">
             <h1>Dashboard de Análisis</h1>
-            <p class="mb-0">Vista general de todos los proyectos analizados</p>
+            <p class="mb-0">Vista estructurada de proyectos, componentes y métricas</p>
         </div>
 
         <!-- Estadísticas -->
@@ -659,7 +528,7 @@
 
         <!-- Filtros -->
         <div class="filters-section">
-            <div class="row">
+            <div class="row g-1">
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterSearch">Búsqueda</label>
                     <input type="text" id="filterSearch" class="form-control filter-input"
@@ -706,7 +575,15 @@
                     <div class="d-flex gap-2">
                         <button class="btn btn-icon-action" onclick="resetFilters()"
                                 data-bs-toggle="tooltip" data-bs-placement="top" title="Limpiar filtros">
-                            <i class="bi bi-trash"></i>
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn btn-icon-action" onclick="expandAll()"
+                                data-bs-toggle="tooltip" title="Expandir todo">
+                            <i class="bi bi-arrows-expand"></i>
+                        </button>
+                        <button class="btn btn-icon-action" onclick="collapseAll()"
+                                data-bs-toggle="tooltip" title="Contraer todo">
+                            <i class="bi bi-arrows-collapse"></i>
                         </button>
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-icon-action dropdown-toggle"
@@ -731,67 +608,157 @@
             </div>
         </div>
 
-        <!-- Tabla de Métricas -->
+        <!-- Tabla Jerárquica -->
         <div class="table-container">
             <div class="table-responsive">
-                <table class="table table-hover metrics-table" id="metricsTable">
+                <table class="table hierarchical-table" id="hierarchicalTable">
                     <thead>
                         <tr>
-                            <th scope="col" onclick="sortTable(0)">Nivel <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col" onclick="sortTable(1)">Proyecto <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col" onclick="sortTable(2)">Entidad <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col" onclick="sortTable(3)">Métrica <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col" onclick="sortTable(4)">Herramienta <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col" onclick="sortTable(5)">Valor <i class="bi bi-caret-down-fill"></i></th>
-                            <th scope="col">Descripción</th>
+                            <th>Entidad / Métrica</th>
+                            <th>Nivel</th>
+                            <th>Dominio</th>
+                            <th>Herramienta</th>
+                            <th>Valor</th>
+                            <th>Descripción</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        {% for measure in measures %}
-                        <tr data-project="{{ measure.project_name }}"
-                            data-metric="{{ measure.metric_name }}"
-                            data-tool="{{ measure.tool }}"
-                            data-level="{{ measure.level }}">
-                            <td>
-                                <span class="badge-level {{ measure.level|lower }}">
-                                    {{ measure.level }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="project-name" title="{{ measure.project_name }}">
-                                    {{ measure.project_name }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="entity-name" title="{{ measure.entity_name|default:'—' }}">
-                                    {{ measure.entity_name|default:"—" }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="metric-name" title="{{ measure.metric_name }}">
-                                    {{ measure.metric_name }}
-                                </div>
-                            </td>
-                            <td>
-                                <span class="tool-badge {{ measure.tool|lower }}" title="{{ measure.tool }}">
-                                    {{ measure.tool }}
-                                </span>
-                            </td>
-                            <td class="metric-value">{{ measure.value }}</td>
-                            <td>
-                                <small class="text-muted" title="{{ measure.description|default:'—' }}">
-                                    {{ measure.description|default:"—"|truncatewords:15 }}
-                                </small>
-                            </td>
-                        </tr>
+                        {% for project_node in hierarchical_data %}
+                            <!-- PROJECT ROW -->
+                            <tr class="project-row hierarchy-level-0"
+                                data-id="{{ project_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-type="project">
+                                <td>
+                                    <span class="expand-icon" onclick="toggleNode('{{ project_node.id }}')">
+                                        <i class="bi bi-caret-right-fill"></i>
+                                    </span>
+                                    <strong class="project-name">{{ project_node.project_name }}</strong>
+                                    <small class="text-muted d-block" style="padding-left: 28px;">
+                                        Key: {{ project_node.project_key }}
+                                    </small>
+                                </td>
+                                <td><span class="badge-level proyecto">PROYECTO</span></td>
+                                <td colspan="3"></td>
+                                <td>
+                                    {% if project_node.last_analysis %}
+                                        <small>Último análisis: {{ project_node.last_analysis|date:"d/m/Y" }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <!-- PROJECT MEASURES -->
+                            {% for measure in project_node.measures %}
+                            <tr class="child-row measure-row hierarchy-level-1"
+                                data-parent="{{ project_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-metric="{{ measure.metric_name }}"
+                                data-tool="{{ measure.tool }}"
+                                data-type="measure">
+                                <td class="hierarchy-level-1">
+                                    <span class="measure-name">{{ measure.metric_name }}</span>
+                                </td>
+                                <td><span class="badge-level proyecto">MÉTRICA</span></td>
+                                <td><small>{{ measure.domain }}</small></td>
+                                <td><small>{{ measure.tool }}</small></td>
+                                <td class="measure-value">{{ measure.value }}</td>
+                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- COMPONENTS -->
+                            {% for component_node in project_node.components %}
+                            <tr class="child-row component-row hierarchy-level-1"
+                                data-id="{{ component_node.id }}"
+                                data-parent="{{ project_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-type="component">
+                                <td class="hierarchy-level-1">
+                                    {% if component_node.measures or component_node.classes %}
+                                    <span class="expand-icon" onclick="toggleNode('{{ component_node.id }}')">
+                                        <i class="bi bi-caret-right-fill"></i>
+                                    </span>
+                                    {% endif %}
+                                    <span class="component-name" data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            title="<strong>Path completo:</strong><br>{{ component_node.component_path }}">
+                                        {{ component_node.component_display_name }}
+                                    </span>
+                                    <small class="text-muted d-block" style="padding-left: 28px;">
+                                        {{ component_node.qualifier }}
+                                    </small>
+                                </td>
+                                <td><span class="badge-level componente">COMPONENTE</span></td>
+                                <td colspan="4"></td>
+                            </tr>
+
+                            <!-- COMPONENT MEASURES -->
+                            {% for measure in component_node.measures %}
+                            <tr class="child-row measure-row hierarchy-level-2"
+                                data-parent="{{ component_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-metric="{{ measure.metric_name }}"
+                                data-tool="{{ measure.tool }}"
+                                data-type="measure">
+                                <td class="hierarchy-level-2">
+                                    <span class="measure-name">{{ measure.metric_name }}</span>
+                                </td>
+                                <td><span class="badge-level componente">MÉTRICA</span></td>
+                                <td><small>{{ measure.domain }}</small></td>
+                                <td><small>{{ measure.tool }}</small></td>
+                                <td class="measure-value">{{ measure.value }}</td>
+                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- CLASSES -->
+                            {% for class_node in component_node.classes %}
+                            <tr class="child-row class-row hierarchy-level-2"
+                                data-id="{{ class_node.id }}"
+                                data-parent="{{ component_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-type="class">
+                                <td class="hierarchy-level-2">
+                                    {% if class_node.measures %}
+                                    <span class="expand-icon" onclick="toggleNode('{{ class_node.id }}')">
+                                        <i class="bi bi-caret-right-fill"></i>
+                                    </span>
+                                    {% endif %}
+                                    <span class="class-name">{{ class_node.class_name }}</span>
+                                </td>
+                                <td><span class="badge-level clase">CLASE</span></td>
+                                <td colspan="4"></td>
+                            </tr>
+
+                            <!-- CLASS MEASURES -->
+                            {% for measure in class_node.measures %}
+                            <tr class="child-row measure-row hierarchy-level-3"
+                                data-parent="{{ class_node.id }}"
+                                data-project="{{ project_node.project_name }}"
+                                data-metric="{{ measure.metric_name }}"
+                                data-tool="{{ measure.tool }}"
+                                data-type="measure">
+                                <td class="hierarchy-level-3">
+                                    <span class="measure-name">{{ measure.metric_name }}</span>
+                                </td>
+                                <td><span class="badge-level clase">MÉTRICA</span></td>
+                                <td><small>{{ measure.domain }}</small></td>
+                                <td><small>{{ measure.tool }}</small></td>
+                                <td class="measure-value">{{ measure.value }}</td>
+                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                            {% endfor %}
                         {% empty %}
                         <tr>
-                            <td colspan="7">
+                            <td colspan="6">
                                 <div class="no-results">
                                     <i class="bi bi-inbox"></i>
                                     <h4>No hay métricas disponibles</h4>
                                     <p>Importa proyectos para ver sus métricas aquí</p>
-                                    <a href="{% url 'main:importarProyecto' %}" class="btn btn-primary-gradient mt-3">
+                                    <a href="{% url 'main:importarProyecto' %}" class="btn btn-primary mt-3">
                                         <i class="bi bi-plus-circle"></i> Importar Proyectos
                                     </a>
                                 </div>
@@ -801,74 +768,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Paginación -->
-            {% if measures %}
-            <div class="pagination-container">
-                <div class="page-info">
-                    Mostrando <strong>{{ measures.start_index }}</strong> a <strong>{{ measures.end_index }}</strong>
-                    de <strong>{{ total_measures }}</strong> métricas
-                </div>
-
-                {% if paginator.num_pages > 1 %}
-                <nav aria-label="Navegación de páginas">
-                    <ul class="pagination mb-0">
-                        {% if measures.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?level={{ selected_level }}&page=1" aria-label="Primera">
-                                <i class="bi bi-chevron-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?level={{ selected_level }}&page={{ measures.previous_page_number }}" aria-label="Anterior">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
-                        </li>
-                        {% endif %}
-
-                        {% for num in paginator.page_range %}
-                            {% if measures.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            {% elif num > measures.number|add:'-3' and num < measures.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?level={{ selected_level }}&page={{ num }}">{{ num }}</a>
-                            </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if measures.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?level={{ selected_level }}&page={{ measures.next_page_number }}" aria-label="Siguiente">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?level={{ selected_level }}&page={{ paginator.num_pages }}" aria-label="Última">
-                                <i class="bi bi-chevron-double-right"></i>
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-            </div>
-            {% endif %}
         </div>
 
         <!-- Botón de Acción -->
@@ -908,6 +807,42 @@
     }
 
     // ============================================
+    // EXPAND/COLLAPSE JERÁRQUICO
+    // ============================================
+
+    function toggleNode(nodeId) {
+        const childRows = document.querySelectorAll(`[data-parent="${nodeId}"]`);
+        const expandIcon = document.querySelector(`[data-id="${nodeId}"] .expand-icon i`);
+
+        childRows.forEach(row => {
+            row.classList.toggle('visible');
+        });
+
+        if (expandIcon) {
+            const icon = expandIcon.closest('.expand-icon');
+            icon.classList.toggle('expanded');
+        }
+    }
+
+    function expandAll() {
+        document.querySelectorAll('.child-row').forEach(row => {
+            row.classList.add('visible');
+        });
+        document.querySelectorAll('.expand-icon').forEach(icon => {
+            icon.classList.add('expanded');
+        });
+    }
+
+    function collapseAll() {
+        document.querySelectorAll('.child-row').forEach(row => {
+            row.classList.remove('visible');
+        });
+        document.querySelectorAll('.expand-icon').forEach(icon => {
+            icon.classList.remove('expanded');
+        });
+    }
+
+    // ============================================
     // CAMBIO DE NIVEL
     // ============================================
 
@@ -917,7 +852,6 @@
 
         const level = selectElement.value;
 
-        // Advertencia si selecciona "Todos"
         if (level === 'Todos') {
             const confirmed = confirm('Cargar todas las métricas puede tardar varios segundos. ¿Deseas continuar?');
             if (!confirmed) {
@@ -926,17 +860,15 @@
             }
         }
 
-        // Mostrar loading antes de recargar
         showLoading('Cambiando nivel de análisis...', 'Cargando ' + level.toLowerCase());
 
-        // Dar tiempo para que se vea el loading antes de recargar
         setTimeout(() => {
             window.location.href = '?level=' + encodeURIComponent(level);
         }, 100);
     }
 
     // ============================================
-    // FILTRADO DE TABLA
+    // FILTRADO
     // ============================================
 
     function filterTable() {
@@ -952,9 +884,6 @@
         let visibleCount = 0;
 
         for (let row of rows) {
-            // Skip empty rows or rows without data attributes
-            if (!row.getAttribute('data-project')) continue;
-
             const project = row.getAttribute('data-project')?.toLowerCase() || '';
             const metric = row.getAttribute('data-metric')?.toLowerCase() || '';
             const tool = row.getAttribute('data-tool')?.toLowerCase() || '';
@@ -974,69 +903,12 @@
         }
     }
 
-    function resetFilters() {
-        document.getElementById('filterSearch').value = '';
-        document.getElementById('filterProject').value = '';
-        document.getElementById('filterMetric').value = '';
-        document.getElementById('filterTool').value = '';
-        filterTable();
-    }
-
     // ============================================
-    // ORDENAMIENTO
-    // ============================================
-
-    let sortDirection = {};
-
-    function sortTable(columnIndex) {
-        const table = document.getElementById('metricsTable');
-        if (!table) return;
-
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row =>
-            row.style.display !== 'none' && row.getAttribute('data-project')
-        );
-
-        sortDirection[columnIndex] = !sortDirection[columnIndex];
-        const ascending = sortDirection[columnIndex];
-
-        rows.sort((a, b) => {
-            const aValue = a.cells[columnIndex].textContent.trim();
-            const bValue = b.cells[columnIndex].textContent.trim();
-
-            const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
-            const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
-
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return ascending ? aNum - bNum : bNum - aNum;
-            } else {
-                return ascending
-                    ? aValue.localeCompare(bValue)
-                    : bValue.localeCompare(aValue);
-            }
-        });
-
-        rows.forEach(row => tbody.appendChild(row));
-
-        const headers = table.querySelectorAll('thead th');
-        headers.forEach((header, index) => {
-            const icon = header.querySelector('i');
-            if (icon) {
-                if (index === columnIndex) {
-                    icon.className = ascending ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill';
-                } else {
-                    icon.className = 'bi bi-caret-down-fill';
-                }
-            }
-        });
-    }
-
-    // ============================================
-    // EXPORTACIÓN
+    // EXPORTACIÓN (usar las funciones del archivo anterior)
     // ============================================
 
     function exportToCSV() {
-    exportToCSVHierarchical();
+        exportToCSVHierarchical();
     }
 
     function exportToJSON() {
@@ -1302,12 +1174,13 @@
             .replace(/'/g, '&apos;');
     }
 
+
     // ============================================
     // EVENT LISTENERS
     // ============================================
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Filtros (NO incluir filterLevel aquí)
+        // Filtros
         const filterSearch = document.getElementById('filterSearch');
         const filterProject = document.getElementById('filterProject');
         const filterMetric = document.getElementById('filterMetric');
@@ -1323,16 +1196,6 @@
         tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-
-        // Inicializar tooltip para el botón de exportar (que es dropdown)
-        const exportButton = document.querySelector('.btn-icon-action.dropdown-toggle');
-        if (exportButton && exportButton.hasAttribute('data-bs-original-title')) {
-            const tooltip = new bootstrap.Tooltip(exportButton, {
-                title: exportButton.getAttribute('data-bs-original-title'),
-                placement: 'top',
-                trigger: 'hover'
-            });
-        }
 
         // Ocultar loading cuando todo esté listo
         hideLoading();

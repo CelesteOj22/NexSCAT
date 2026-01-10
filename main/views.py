@@ -8,7 +8,7 @@ from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from .models import Metric, Component, ProjectMeasure, ComponentMeasure, ClassMeasure
+from .models import Metric, Component, ProjectMeasure, ComponentMeasure, Class, ClassMeasure, Project, SonarToken
 from main.services.factory import sonar, source
 from .forms import SonarTokenForm
 
@@ -29,12 +29,6 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
-
-
-# Imports de tus modelos
-from main.models import SonarToken, Project
-
-
 
 
 def homepage(request):
@@ -466,8 +460,7 @@ def configurarToken(request):
 @login_required
 def dashboardAnalisis(request):
     """
-    Vista general del dashboard con métricas filtradas por nivel y paginación
-    Por defecto muestra solo métricas a nivel de proyecto
+    Vista del dashboard con estructura jerárquica
     """
     # Obtener el nivel seleccionado (por defecto: Proyecto)
     selected_level = request.GET.get('level', 'Proyecto')
@@ -484,86 +477,129 @@ def dashboardAnalisis(request):
     # Obtener todas las herramientas únicas
     tools = Metric.objects.values_list('tool', flat=True).distinct()
 
-    # Preparar datos según el nivel seleccionado
-    measures_data = []
+    # Preparar datos jerárquicos
+    hierarchical_data = []
 
-    if selected_level in ['Proyecto', 'Todos']:
-        # MÉTRICAS A NIVEL DE PROYECTO
-        project_measures = ProjectMeasure.objects.select_related(
-            'id_project', 'id_metric'
-        ).all()
+    for project in projects:
+        project_node = {
+            'type': 'project',
+            'id': f'project_{project.id_project}',
+            'project_id': project.id_project,
+            'project_name': project.name,
+            'project_key': project.key,
+            'last_analysis': project.last_analysis_sq,
+            'measures': [],
+            'components': []
+        }
 
-        for measure in project_measures:
-            measures_data.append({
-                'level': 'Proyecto',
-                'project_name': measure.id_project.name,
-                'project_key': measure.id_project.key,
-                'entity_name': None,
-                'metric_name': measure.id_metric.name,
-                'metric_key': measure.id_metric.key,
-                'tool': measure.id_metric.tool,
-                'value': measure.value,
-                'description': measure.id_metric.description or '',
-            })
+        # Métricas del proyecto (si nivel == Proyecto o Todos)
+        if selected_level in ['Proyecto', 'Todos']:
+            project_measures = ProjectMeasure.objects.filter(
+                id_project=project
+            ).select_related('id_metric').order_by('id_metric__name')
 
-    if selected_level in ['Componente', 'Todos']:
-        # MÉTRICAS A NIVEL DE COMPONENTE
-        component_measures = ComponentMeasure.objects.select_related(
-            'id_component__id_project', 'id_metric'
-        ).all()
+            for pm in project_measures:
+                project_node['measures'].append({
+                    'level': 'Proyecto',
+                    'metric_name': pm.id_metric.name,
+                    'metric_key': pm.id_metric.key,
+                    'tool': pm.id_metric.tool,
+                    'value': pm.value,
+                    'description': pm.id_metric.description or '',
+                    'domain': pm.id_metric.domain,
+                })
 
-        for measure in component_measures:
-            measures_data.append({
-                'level': 'Componente',
-                'project_name': measure.id_component.id_project.name,
-                'project_key': measure.id_component.id_project.key,
-                'entity_name': measure.id_component.path,
-                'metric_name': measure.id_metric.name,
-                'metric_key': measure.id_metric.key,
-                'tool': measure.id_metric.tool,
-                'value': measure.value,
-                'description': measure.id_metric.description or '',
-            })
+        # Componentes (si nivel == Componente, Clase o Todos)
+        if selected_level in ['Componente', 'Clase', 'Todos']:
+            components = Component.objects.filter(
+                id_project=project
+            ).order_by('path')
 
-    if selected_level in ['Clase', 'Todos']:
-        # MÉTRICAS A NIVEL DE CLASE
-        class_measures = ClassMeasure.objects.select_related(
-            'id_class__id_component__id_project', 'id_metric'
-        ).all()
+            for component in components:
+                component_display_name = component.path.split('/')[-1] if component.path else component.path
+                component_node = {
+                    'type': 'component',
+                    'id': f'component_{component.id_component}',
+                    'component_id': component.id_component,
+                    'component_name': component.path,
+                    'component_path': component.path,
+                    'component_display_name': component_display_name,
+                    'qualifier': component.qualifier,
+                    'measures': [],
+                    'classes': []
+                }
 
-        for measure in class_measures:
-            measures_data.append({
-                'level': 'Clase',
-                'project_name': measure.id_class.id_component.id_project.name,
-                'project_key': measure.id_class.id_component.id_project.key,
-                'entity_name': measure.id_class.name,
-                'metric_name': measure.id_metric.name,
-                'metric_key': measure.id_metric.key,
-                'tool': measure.id_metric.tool,
-                'value': measure.value,
-                'description': measure.id_metric.description or '',
-            })
+                # Métricas del componente
+                if selected_level in ['Componente', 'Todos']:
+                    comp_measures = ComponentMeasure.objects.filter(
+                        id_component=component
+                    ).select_related('id_metric').order_by('id_metric__name')
 
-    # Configurar paginación (50 items por página, ajusta según necesites)
-    items_per_page = 50
-    paginator = Paginator(measures_data, items_per_page)
+                    for cm in comp_measures:
+                        component_node['measures'].append({
+                            'level': 'Componente',
+                            'metric_name': cm.id_metric.name,
+                            'metric_key': cm.id_metric.key,
+                            'tool': cm.id_metric.tool,
+                            'value': cm.value,
+                            'description': cm.id_metric.description or '',
+                            'domain': cm.id_metric.domain,
+                        })
 
-    try:
-        measures_page = paginator.page(page_number)
-    except PageNotAnInteger:
-        measures_page = paginator.page(1)
-    except EmptyPage:
-        measures_page = paginator.page(paginator.num_pages)
+                # Clases (si nivel == Clase o Todos)
+                if selected_level in ['Clase', 'Todos']:
+                    classes = Class.objects.filter(
+                        id_component=component
+                    ).order_by('name')
+
+                    for class_obj in classes:
+                        class_node = {
+                            'type': 'class',
+                            'id': f'class_{class_obj.id_class}',
+                            'class_id': class_obj.id_class,
+                            'class_name': class_obj.name,
+                            'measures': []
+                        }
+
+                        # Métricas de la clase
+                        class_measures = ClassMeasure.objects.filter(
+                            id_class=class_obj
+                        ).select_related('id_metric').order_by('id_metric__name')
+
+                        for clm in class_measures:
+                            class_node['measures'].append({
+                                'level': 'Clase',
+                                'metric_name': clm.id_metric.name,
+                                'metric_key': clm.id_metric.key,
+                                'tool': clm.id_metric.tool,
+                                'value': clm.value,
+                                'description': clm.id_metric.description or '',
+                                'domain': clm.id_metric.domain,
+                            })
+
+                        component_node['classes'].append(class_node)
+
+                project_node['components'].append(component_node)
+
+        hierarchical_data.append(project_node)
 
     # Calcular estadísticas
     total_projects = projects.count()
-    total_measures_all = len(measures_data)  # Total sin paginar
-    total_tools = len(tools)
-
-    # Estadísticas por nivel (siempre calculadas para mostrar en cards)
     total_project_measures = ProjectMeasure.objects.count()
     total_component_measures = ComponentMeasure.objects.count()
     total_class_measures = ClassMeasure.objects.count()
+
+    # Total de métricas según el nivel
+    if selected_level == 'Proyecto':
+        total_measures = total_project_measures
+    elif selected_level == 'Componente':
+        total_measures = total_component_measures
+    elif selected_level == 'Clase':
+        total_measures = total_class_measures
+    else:  # Todos
+        total_measures = total_project_measures + total_component_measures + total_class_measures
+
+    total_tools = len(tools)
 
     # Último análisis
     last_analysis = Project.objects.filter(
@@ -574,20 +610,18 @@ def dashboardAnalisis(request):
         'projects': projects,
         'metrics': metrics,
         'tools': tools,
-        'measures': measures_page,  # Página actual
-        'paginator': paginator,
+        'hierarchical_data': hierarchical_data,
         'total_projects': total_projects,
-        'total_measures': total_measures_all,  # Total de métricas filtradas
+        'total_measures': total_measures,
         'total_tools': total_tools,
         'total_project_measures': total_project_measures,
         'total_component_measures': total_component_measures,
         'total_class_measures': total_class_measures,
         'last_analysis': last_analysis,
         'selected_level': selected_level,
-        'items_per_page': items_per_page,
     }
 
-    return render(request, 'main/dashboardAnalisis.html', context)
+    return render(request, 'main/dashboardAnalisisJerarquico.html', context)
 
 
 @login_required
@@ -1036,3 +1070,131 @@ def delete_user(request, user_id):
             messages.error(request, 'Error inesperado al eliminar usuario.')
 
     return redirect('main:user_management')
+
+
+@login_required
+def obtener_datos_jerarquicos(request):
+    """
+    Endpoint que devuelve los datos en formato jerárquico
+    GET /api/export/hierarchical/?level=Todos
+    """
+    selected_level = request.GET.get('level', 'Todos')
+
+    # Obtener todos los proyectos
+    projects = Project.objects.all()
+
+    data = []
+
+    for project in projects:
+        project_data = {
+            'project': {
+                'id': project.id_project,
+                'key': project.key or '',
+                'name': project.name,
+                'lastAnalysis': project.last_analysis_sq.isoformat() if project.last_analysis_sq else None
+            },
+            'project_measures': []
+        }
+
+        # Métricas del proyecto (si nivel == Proyecto o Todos)
+        if selected_level in ['Proyecto', 'Todos']:
+            project_measures = ProjectMeasure.objects.filter(
+                id_project=project
+            ).select_related('id_metric')
+
+            for pm in project_measures:
+                project_data['project_measures'].append({
+                    'domain': pm.id_metric.domain if hasattr(pm.id_metric, 'domain') else '',
+                    'key': pm.id_metric.key,
+                    'name': pm.id_metric.name,
+                    'description': pm.id_metric.description if hasattr(pm.id_metric, 'description') else '',
+                    'type': pm.id_metric.type if hasattr(pm.id_metric, 'type') else '',
+                    'value': str(pm.value or ''),
+                    'tool': pm.id_metric.tool
+                })
+
+        # Componentes (si nivel == Componente, Clase o Todos)
+        project_data['components'] = []
+
+        if selected_level in ['Componente', 'Clase', 'Todos']:
+            components = Component.objects.filter(
+                id_project=project
+            ).order_by('path')
+
+            for component in components:
+                component_data = {
+                    'component': {
+                        'id': component.id_component,
+                        'name': component.path,  # Usar path como nombre
+                        'qualifier': component.qualifier,
+                        'path': component.path,
+                        'language': ''  # Component no tiene language
+                    },
+                    'component_measures': []
+                }
+
+                # Métricas del componente
+                if selected_level in ['Componente', 'Todos']:
+                    comp_measures = ComponentMeasure.objects.filter(
+                        id_component=component
+                    ).select_related('id_metric')
+
+                    for cm in comp_measures:
+                        component_data['component_measures'].append({
+                            'domain': cm.id_metric.domain if hasattr(cm.id_metric, 'domain') else '',
+                            'key': cm.id_metric.key,
+                            'name': cm.id_metric.name,
+                            'description': cm.id_metric.description if hasattr(cm.id_metric, 'description') else '',
+                            'type': cm.id_metric.type if hasattr(cm.id_metric, 'type') else '',
+                            'value': str(cm.value or ''),
+                            'tool': cm.id_metric.tool
+                        })
+
+                # Clases (si nivel == Clase o Todos)
+                component_data['classes'] = []
+
+                if selected_level in ['Clase', 'Todos']:
+                    try:
+                        from .models import Class, ClassMeasure
+
+                        classes = Class.objects.filter(
+                            id_component=component
+                        )
+
+                        for class_obj in classes:
+                            class_data = {
+                                'class': {
+                                    'id': class_obj.id_class,
+                                    'name': class_obj.name,
+                                    'qualifier': ''  # Class no tiene qualifier
+                                },
+                                'class_measures': []
+                            }
+
+                            # Métricas de la clase
+                            class_measures = ClassMeasure.objects.filter(
+                                id_class=class_obj
+                            ).select_related('id_metric')
+
+                            for clm in class_measures:
+                                class_data['class_measures'].append({
+                                    'domain': clm.id_metric.domain if hasattr(clm.id_metric, 'domain') else '',
+                                    'key': clm.id_metric.key,
+                                    'name': clm.id_metric.name,
+                                    'description': clm.id_metric.description if hasattr(clm.id_metric,
+                                                                                        'description') else '',
+                                    'type': clm.id_metric.type if hasattr(clm.id_metric, 'type') else '',
+                                    'value': str(clm.value or ''),
+                                    'tool': clm.id_metric.tool
+                                })
+
+                            component_data['classes'].append(class_data)
+                    except ImportError:
+                        # Si no existe el modelo Class, continuar sin clases
+                        pass
+
+                project_data['components'].append(component_data)
+
+        data.append(project_data)
+
+    return JsonResponse({'data': data}, safe=False)
