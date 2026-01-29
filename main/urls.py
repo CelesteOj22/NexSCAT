@@ -37,6 +37,7 @@ urlpatterns = [
     path('proyecto/<int:project_id>/analizar/', views.analizar_proyecto_individual, name='analizar_proyecto_individual'),
     path('test-celery/', views.test_celery_view, name='test_celery'),
     path('analizar_sse/', views.analizar_sse, name='analizar_sse'),
+    path('estadisticas-paralelo/', views.estadisticas_paralelo, name='estadisticas_paralelo'),
 
 # Administración de usuarios
     path('users/', views.user_management, name='user_management'),

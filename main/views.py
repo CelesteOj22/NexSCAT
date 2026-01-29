@@ -14,7 +14,7 @@ from .forms import SonarTokenForm
 
 from .services.user import UserService
 
-from .tasks import analizar_proyecto_completo, test_celery
+from .tasks import analizar_proyecto_completo,analizar_proyecto_paralelo, test_celery
 from celery.result import AsyncResult
 
 import json
@@ -196,45 +196,113 @@ def importarProyecto(request):
 
 def _analizar_asincrono(request, proyectos, usu_token):
     """
-    Análisis asíncrono usando Celery
+    Análisis asíncrono usando Celery con paralelismo real
     """
-    print(f"Comenzando el análisis de {len(proyectos)} proyecto/s usando Celery")
+    # Detectar si el paralelismo está habilitado
+    parallel_enabled = settings.ANALYSIS_CONFIG.ENABLE_PARALLEL
+    mode_name = "PARALELO" if parallel_enabled else "ASÍNCRONO"
+
+    print("=" * 70)
+    print(f"🚀 MODO: {mode_name} CON CELERY")
+    print("=" * 70)
+    print(f"Proyectos a analizar: {len(proyectos)}")
+    print(f"Paralelismo habilitado: {parallel_enabled}")
+    print(f"Workers disponibles: {settings.ANALYSIS_CONFIG.CELERY_WORKERS}")
+
+    if parallel_enabled:
+        print("⚡ Cada proyecto se analizará con SonarQube y SourceMeter EN PARALELO")
+    else:
+        print("🔄 Análisis secuencial (SonarQube → SourceMeter)")
+
+    print("=" * 70)
 
     task_ids = []
+    total_projects = len(proyectos)
 
-    for proyecto in proyectos:
+    for idx, proyecto in enumerate(proyectos, 1):
         try:
-            print(f"🚀 Lanzando análisis asíncrono para: {proyecto.name}")
+            print(f"\n[{idx}/{total_projects}] 🚀 Lanzando análisis para: {proyecto.name}")
 
-            # Lanzar tarea de Celery
-            task = analizar_proyecto_completo.delay(
-                proyecto_path=str(proyecto),
-                usuario_id=request.user.id,
-                token=usu_token.token
+            # Primero crear el proyecto en la BD
+            from .models import Project
+            from main.services.factory import sonar
+
+            project_key = sonar.normalizar_project_key(proyecto.name)
+
+            project, created = Project.objects.update_or_create(
+                key=project_key,
+                defaults={
+                    'name': proyecto.name,
+                    'path': str(proyecto),
+                    'created_by': request.user
+                }
             )
 
-            task_ids.append({
-                'project_name': proyecto.name,
-                'task_id': task.id
-            })
+            if created:
+                print(f"  ✨ Proyecto creado: {project.name} (ID: {project.id_project})")
+            else:
+                print(f"  🔄 Proyecto existente: {project.name} (ID: {project.id_project})")
 
-            print(f"✅ Tarea lanzada para {proyecto.name} (Task ID: {task.id})")
+            # 🔥 Decidir qué tarea usar según configuración
+            if parallel_enabled:
+                # Usar análisis paralelo (SonarQube y SourceMeter simultáneos)
+                print(f"  ⚡ Modo: PARALELO (Sonar + Source simultáneos)")
+                task = analizar_proyecto_paralelo.delay(
+                    project_id=project.id_project,
+                    token=usu_token.token
+                )
+            else:
+                # Usar análisis secuencial tradicional
+                print(f"  🔄 Modo: SECUENCIAL (Sonar → Source)")
+                task = analizar_proyecto_completo.delay(
+                    proyecto_path=str(proyecto),
+                    usuario_id=request.user.id,
+                    token=usu_token.token
+                )
+
+            task_info = {
+                'project_id': project.id_project,
+                'project_name': proyecto.name,
+                'task_id': task.id,
+                'mode': 'parallel' if parallel_enabled else 'sequential',
+                'started_at': timezone.now().isoformat()
+            }
+
+            task_ids.append(task_info)
+
+            print(f"  ✅ Tarea lanzada (Task ID: {task.id})")
 
         except Exception as e:
-            print(f"❌ Error lanzando tarea para {proyecto.name}: {str(e)}")
+            print(f"  ❌ Error lanzando tarea para {proyecto.name}: {str(e)}")
+            logger.error(f"Error lanzando análisis para {proyecto.name}: {str(e)}")
             messages.error(request, f"Error en {proyecto.name}: {str(e)}")
 
     if task_ids:
+        # Guardar en sesión
         request.session['analysis_tasks'] = task_ids
+        request.session['analysis_mode'] = 'parallel' if parallel_enabled else 'sequential'
+        request.session.modified = True
+
+        mode_emoji = "⚡" if parallel_enabled else "🔄"
+        mode_text = "en paralelo" if parallel_enabled else "secuencialmente"
+
         messages.success(
             request,
-            f"✅ {len(task_ids)} proyectos enviados para análisis en segundo plano (Celery)"
+            f"{mode_emoji} {len(task_ids)} proyecto(s) enviado(s) para análisis "
+            f"{mode_text} (Celery Workers: {settings.ANALYSIS_CONFIG.CELERY_WORKERS})"
         )
+
+        print(f"\n{'=' * 70}")
+        print(f"✅ RESUMEN:")
+        print(f"  Proyectos enviados: {len(task_ids)}")
+        print(f"  Modo de análisis: {mode_name}")
+        print(f"  Workers Celery: {settings.ANALYSIS_CONFIG.CELERY_WORKERS}")
+        print(f"{'=' * 70}\n")
+
         return redirect('main:monitorear_analisis')
     else:
         messages.error(request, "No se pudieron lanzar las tareas de análisis")
         return render(request, 'main/importarProyecto.html')
-
 
 def _analizar_sincrono(request, proyectos, usu_token):
     """
@@ -315,7 +383,7 @@ def monitorear_analisis(request):
 @login_required
 def verificar_tarea(request, task_id):
     """
-    API endpoint mejorado para verificar el estado con progreso detallado
+    API endpoint mejorado con información de paralelismo
     """
     task = AsyncResult(task_id)
 
@@ -328,28 +396,54 @@ def verificar_tarea(request, task_id):
     }
 
     if task.state == 'PENDING':
-        response['status'] = 'Esperando en cola...'
+        response['status'] = '⏳ Esperando en cola...'
         response['progress'] = 0
         response['current_step'] = 0
         response['total_steps'] = 5
 
     elif task.state == 'PROGRESS':
-        # 🔥 Estado personalizado con info detallada
+        # Estado personalizado con info detallada
         info = task.info
         response['status'] = info.get('status', 'Procesando...')
         response['progress'] = info.get('percent', 0)
         response['current_step'] = info.get('current_step', 0)
         response['total_steps'] = info.get('total_steps', 5)
+        response['mode'] = info.get('mode', 'sequential')
+
+        # 🔥 Info adicional de paralelismo
+        if info.get('mode') == 'parallel':
+            response['sonar_task_id'] = info.get('sonar_task_id')
+            response['source_task_id'] = info.get('source_task_id')
 
     elif task.state == 'SUCCESS':
-        response['status'] = '¡Completado exitosamente! ✅'
+        result = task.result
+        response['status'] = '✅ ¡Completado exitosamente!'
         response['progress'] = 100
         response['current_step'] = 5
         response['total_steps'] = 5
-        response['result'] = task.result
+        response['result'] = result
+
+        # 🔥 Mostrar métricas de paralelismo
+        if isinstance(result, dict):
+            response['mode'] = result.get('mode', 'sequential')
+
+            if result.get('mode') == 'parallel':
+                response['speedup'] = result.get('speedup', 1.0)
+                response['time_saved'] = result.get('time_saved', 0)
+                response['total_time'] = result.get('total_time', 0)
+
+                # Formatear mensaje con speedup
+                speedup = result.get('speedup', 1.0)
+                time_saved = result.get('time_saved', 0)
+
+                if speedup > 1:
+                    response['status'] = (
+                        f"✅ ¡Completado! ⚡ {speedup:.2f}x más rápido "
+                        f"(Ahorro: {time_saved:.1f}s)"
+                    )
 
     elif task.state == 'FAILURE':
-        response['status'] = 'Error en el análisis ❌'
+        response['status'] = '❌ Error en el análisis'
         response['progress'] = 0
         response['current_step'] = 0
         response['total_steps'] = 5
@@ -362,7 +456,6 @@ def verificar_tarea(request, task_id):
         response['total_steps'] = 5
 
     return JsonResponse(response)
-
 
 @login_required
 def verificar_tareas_batch(request):
@@ -1198,3 +1291,59 @@ def obtener_datos_jerarquicos(request):
         data.append(project_data)
 
     return JsonResponse({'data': data}, safe=False)
+
+
+@login_required
+def estadisticas_paralelo(request):
+    """
+    Vista para mostrar estadísticas de análisis paralelo vs secuencial
+    """
+    from .models import Project
+    from django.db.models import Avg, Count, Sum
+    import json
+
+    # Obtener tareas de la sesión
+    tasks = request.session.get('analysis_tasks', [])
+    mode = request.session.get('analysis_mode', 'sequential')
+
+    # Calcular estadísticas
+    stats = {
+        'total_projects': len(tasks),
+        'mode': mode,
+        'workers': settings.ANALYSIS_CONFIG.CELERY_WORKERS,
+        'parallel_enabled': settings.ANALYSIS_CONFIG.ENABLE_PARALLEL,
+        'completed': 0,
+        'pending': 0,
+        'failed': 0,
+        'total_speedup': 0,
+        'total_time_saved': 0,
+    }
+
+    for task_info in tasks:
+        task = AsyncResult(task_info['task_id'])
+
+        if task.successful():
+            stats['completed'] += 1
+            result = task.result
+
+            if isinstance(result, dict) and result.get('mode') == 'parallel':
+                stats['total_speedup'] += result.get('speedup', 1.0)
+                stats['total_time_saved'] += result.get('time_saved', 0)
+
+        elif task.failed():
+            stats['failed'] += 1
+        else:
+            stats['pending'] += 1
+
+    # Promedio de speedup
+    if stats['completed'] > 0:
+        stats['avg_speedup'] = stats['total_speedup'] / stats['completed']
+    else:
+        stats['avg_speedup'] = 0
+
+    context = {
+        'stats': stats,
+        'tasks': tasks,
+    }
+
+    return render(request, 'main/estadisticas_paralelo.html', context)

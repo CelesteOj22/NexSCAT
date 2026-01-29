@@ -31,18 +31,25 @@ except ImportError:
         MAX_PARALLEL_ANALYSIS = 1
         ENABLE_PARALLEL = False
         USE_CELERY = False
+        ANALYSIS_TIMEOUT = 600
+        CELERY_WORKERS = 1
+        CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+        CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
+        CELERY_TASK_ACKS_LATE = True
+        SONARQUBE_TIMEOUT = 600
+        SOURCEMETER_TIMEOUT = 300
+        SONAR_HEAP_MB = 512
+        SONAR_MIN_HEAP_MB = 128
     ANALYSIS_CONFIG = AnalysisConfig
 
 # ============================================
 # SEGURIDAD
 # ============================================
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
     'SECRET_KEY',
     'django-insecure-#eqw8y+(p-0%u1_(dzap5l@9jn6i$m0by+js7=d2f40)@$tw*2'
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get(
@@ -53,10 +60,7 @@ ALLOWED_HOSTS = os.environ.get(
 # ============================================
 # DETECCIÓN DE ENTORNO
 # ============================================
-# Detectar si estamos en Docker
 IS_DOCKER = os.path.exists('/.dockerenv') or os.environ.get('RUNNING_IN_DOCKER', False)
-
-# Detectar sistema operativo
 IS_WINDOWS = sys.platform.startswith('win')
 IS_LINUX = sys.platform.startswith('linux')
 
@@ -104,6 +108,13 @@ TEMPLATES = [
 WSGI_APPLICATION = 'iscat.wsgi.application'
 
 # ============================================
+# SESSION CONFIGURATION
+# ============================================
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_SAVE_EVERY_REQUEST = False
+
+# ============================================
 # DATABASE
 # ============================================
 DATABASES = {
@@ -114,6 +125,12 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
         'HOST': os.environ.get('DB_HOST', 'localhost' if not IS_DOCKER else 'db'),
         'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000',
+        },
+        'CONN_MAX_AGE': 600,
+        'ATOMIC_REQUESTS': True,
     }
 }
 
@@ -130,21 +147,44 @@ if ANALYSIS_CONFIG.USE_CELERY:
         'CELERY_RESULT_BACKEND',
         'redis://localhost:6379/0' if not IS_DOCKER else 'redis://redis:6379/0'
     )
+
+    # Serialización
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_TIMEZONE = 'America/Argentina/Buenos_Aires'
+
+    # Tracking y timeouts
     CELERY_TASK_TRACK_STARTED = True
     CELERY_TASK_TIME_LIMIT = ANALYSIS_CONFIG.ANALYSIS_TIMEOUT
+
+    # Workers
     CELERY_WORKER_CONCURRENCY = ANALYSIS_CONFIG.CELERY_WORKERS
+    CELERY_WORKER_PREFETCH_MULTIPLIER = ANALYSIS_CONFIG.CELERY_WORKER_PREFETCH_MULTIPLIER
+    CELERY_WORKER_MAX_TASKS_PER_CHILD = ANALYSIS_CONFIG.CELERY_WORKER_MAX_TASKS_PER_CHILD
+    CELERY_TASK_ACKS_LATE = ANALYSIS_CONFIG.CELERY_TASK_ACKS_LATE
+
+    # Pool configuration
+    CELERY_WORKER_POOL = 'prefork'
+    CELERY_WORKER_POOL_RESTARTS = True
+
+    # Results
+    CELERY_RESULT_EXPIRES = 3600
+    CELERY_TASK_IGNORE_RESULT = False
 
     # Retry configuration
     CELERY_TASK_RETRY_MAX = 3
     CELERY_TASK_DEFAULT_RETRY_DELAY = 60
 
-    # IMPORTANTE: Deshabilitar eager mode en producción
+    # IMPORTANTE: Deshabilitar eager mode
     CELERY_TASK_ALWAYS_EAGER = False
     CELERY_TASK_EAGER_PROPAGATES = False
+
+    # Logging
+    CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+    CELERY_WORKER_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
+    CELERY_WORKER_SEND_TASK_EVENTS = True
+    CELERY_TASK_SEND_SENT_EVENT = True
 else:
     # Celery deshabilitado - Análisis secuencial
     CELERY_TASK_ALWAYS_EAGER = True
@@ -154,49 +194,32 @@ else:
 # PASSWORD VALIDATION
 # ============================================
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # ============================================
 # INTERNATIONALIZATION
 # ============================================
-LANGUAGE_CODE = 'es-ar'  # Español de Argentina
-
+LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
-
 USE_I18N = True
-
 USE_TZ = True
 
 # ============================================
-# STATIC FILES (CSS, JavaScript, Images)
+# STATIC FILES
 # ============================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Directorios adicionales con archivos estáticos
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # ============================================
-# MEDIA FILES (Uploads)
+# MEDIA FILES
 # ============================================
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-# Crear directorios si no existen
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
@@ -206,47 +229,23 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ============================================
-# RUTAS DE HERRAMIENTAS DE ANÁLISIS
+# RUTAS DE HERRAMIENTAS
 # ============================================
-
 def get_tool_paths():
-    """
-    Retorna las rutas de las herramientas según el entorno.
-
-    Returns:
-        dict: Diccionario con rutas de SonarScanner y SourceMeter
-    """
     if IS_DOCKER:
-        # Rutas en Docker (Linux)
         return {
             'sonar_scanner': '/app/tools/linux/sonar-scanner/bin/sonar-scanner',
             'sourcemeter': '/app/tools/linux/sourcemeter/Java/SourceMeterJava',
         }
     elif IS_WINDOWS:
-        # Rutas en Windows local
-        base_sonar = os.environ.get(
-            'SONAR_SCANNER_PATH',
-            r'D:\sonar\sonar-scanner-4.7.0.2747-windows\bin\sonar-scanner.bat'
-        )
-        base_sourcemeter = os.environ.get(
-            'SOURCEMETER_PATH',
-            r'D:\sonar\SourceMeter-10.0.0-x64-Windows\Java\SourceMeterJava.exe'
-        )
         return {
-            'sonar_scanner': base_sonar,
-            'sourcemeter': base_sourcemeter,
+            'sonar_scanner': os.environ.get('SONAR_SCANNER_PATH', r'D:\sonar\sonar-scanner-4.7.0.2747-windows\bin\sonar-scanner.bat'),
+            'sourcemeter': os.environ.get('SOURCEMETER_PATH', r'D:\sonar\SourceMeter-10.0.0-x64-Windows\Java\SourceMeterJava.exe'),
         }
     else:
-        # Rutas en Linux/Mac local
         return {
-            'sonar_scanner': os.environ.get(
-                'SONAR_SCANNER_PATH',
-                '/usr/local/bin/sonar-scanner'
-            ),
-            'sourcemeter': os.environ.get(
-                'SOURCEMETER_PATH',
-                '/usr/local/bin/SourceMeterJava'
-            ),
+            'sonar_scanner': os.environ.get('SONAR_SCANNER_PATH', '/usr/local/bin/sonar-scanner'),
+            'sourcemeter': os.environ.get('SOURCEMETER_PATH', '/usr/local/bin/SourceMeterJava'),
         }
 
 TOOL_PATHS = get_tool_paths()
@@ -262,13 +261,22 @@ SONARQUBE_URL = os.environ.get(
 )
 SONARQUBE_TOKEN = os.environ.get('SONARQUBE_TOKEN', '')
 
-# Validar que el token esté configurado en producción
+# Memoria para SonarQube
+SONAR_HEAP_MB = getattr(ANALYSIS_CONFIG, 'SONAR_HEAP_MB', 512)
+SONAR_MIN_HEAP_MB = getattr(ANALYSIS_CONFIG, 'SONAR_MIN_HEAP_MB', 128)
+SONAR_CE_JAVAOPTS = f'-Xmx{SONAR_HEAP_MB}m -Xms{SONAR_MIN_HEAP_MB}m'
+SONAR_WEB_JAVAOPTS = f'-Xmx{SONAR_HEAP_MB}m -Xms{SONAR_MIN_HEAP_MB}m'
+
 if not DEBUG and not SONARQUBE_TOKEN:
     import warnings
-    warnings.warn(
-        "⚠️  SONARQUBE_TOKEN no está configurado. "
-        "Los análisis de SonarQube fallarán."
-    )
+    warnings.warn("⚠️  SONARQUBE_TOKEN no está configurado")
+
+# ============================================
+# TIMEOUTS
+# ============================================
+ANALYSIS_TIMEOUT = ANALYSIS_CONFIG.ANALYSIS_TIMEOUT
+SONARQUBE_TIMEOUT = getattr(ANALYSIS_CONFIG, 'SONARQUBE_TIMEOUT', 900)
+SOURCEMETER_TIMEOUT = getattr(ANALYSIS_CONFIG, 'SOURCEMETER_TIMEOUT', 600)
 
 # ============================================
 # LOGGING
@@ -277,62 +285,34 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
+        'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{'},
+        'simple': {'format': '{levelname} {message}', 'style': '{'},
     },
     'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'},
+        'file': {'class': 'logging.FileHandler', 'filename': BASE_DIR / 'logs' / 'django.log', 'formatter': 'verbose'},
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
+    'root': {'handlers': ['console'], 'level': 'INFO'},
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'main': {  # Tu app
-            'handlers': ['console', 'file'] if not IS_DOCKER else ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'main': {'handlers': ['console', 'file'] if not IS_DOCKER else ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': False},
+        'celery': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'celery.task': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
 }
 
-# Crear directorio de logs
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
 # ============================================
-# SECURITY SETTINGS (Producción)
+# SECURITY SETTINGS
 # ============================================
 if not DEBUG:
-    # HTTPS
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-
-    # HSTS
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
-    # Otros
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
@@ -340,16 +320,26 @@ if not DEBUG:
 # ============================================
 # CONFIGURACIÓN PERSONALIZADA
 # ============================================
-
-# Tamaño máximo de archivo subido (100MB)
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
-
-# Timeouts
-ANALYSIS_TIMEOUT = ANALYSIS_CONFIG.ANALYSIS_TIMEOUT
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 # ============================================
-# DEBUG TOOLBAR (Opcional - Solo desarrollo)
+# VARIABLES PARA DOCKER COMPOSE
+# ============================================
+def get_docker_env_vars():
+    return {
+        'SCAT_MODE': ANALYSIS_CONFIG.MODE,
+        'CELERY_WORKERS': str(ANALYSIS_CONFIG.CELERY_WORKERS),
+        'SONAR_CE_JAVAOPTS': SONAR_CE_JAVAOPTS,
+        'SONAR_WEB_JAVAOPTS': SONAR_WEB_JAVAOPTS,
+        'MAX_PARALLEL_ANALYSIS': str(ANALYSIS_CONFIG.MAX_PARALLEL_ANALYSIS),
+    }
+
+if __name__ != '__main__':
+    DOCKER_ENV_VARS = get_docker_env_vars()
+
+# ============================================
+# DEBUG TOOLBAR
 # ============================================
 if DEBUG and not IS_DOCKER:
     try:
@@ -361,20 +351,30 @@ if DEBUG and not IS_DOCKER:
         pass
 
 # ============================================
-# RESUMEN DE CONFIGURACIÓN (Log en inicio)
+# RESUMEN DE CONFIGURACIÓN
 # ============================================
 if DEBUG:
     import logging
     logger = logging.getLogger(__name__)
-    logger.info("=" * 60)
-    logger.info("NexSCAT - Configuración Cargada")
-    logger.info("=" * 60)
-    logger.info(f"Entorno: {'Docker' if IS_DOCKER else 'Local'}")
-    logger.info(f"Sistema Operativo: {'Windows' if IS_WINDOWS else 'Linux' if IS_LINUX else 'Mac'}")
-    logger.info(f"DEBUG: {DEBUG}")
-    logger.info(f"Base de datos: {DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}")
-    logger.info(f"SonarQube: {SONARQUBE_URL}")
-    logger.info(f"Modo análisis: {ANALYSIS_CONFIG.MODE}")
-    logger.info(f"Análisis paralelos: {ANALYSIS_CONFIG.MAX_PARALLEL_ANALYSIS}")
-    logger.info(f"Celery habilitado: {ANALYSIS_CONFIG.USE_CELERY}")
-    logger.info("=" * 60)
+    logger.info("=" * 70)
+    logger.info("🚀 NexSCAT - Configuración Cargada")
+    logger.info("=" * 70)
+    logger.info(f"📦 Entorno: {'🐳 Docker' if IS_DOCKER else '💻 Local'}")
+    logger.info(f"🖥️  Sistema: {'Windows' if IS_WINDOWS else 'Linux' if IS_LINUX else 'Mac'}")
+    logger.info(f"🐛 DEBUG: {DEBUG}")
+    logger.info(f"🗄️  Base de datos: {DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}")
+    logger.info(f"🔍 SonarQube: {SONARQUBE_URL}")
+    logger.info(f"⚙️  Modo análisis: {ANALYSIS_CONFIG.MODE.upper()}")
+    logger.info(f"⚡ Análisis paralelos: {ANALYSIS_CONFIG.MAX_PARALLEL_ANALYSIS}")
+    logger.info(f"🐰 Celery: {'✅ Habilitado' if ANALYSIS_CONFIG.USE_CELERY else '❌ Deshabilitado'}")
+
+    if ANALYSIS_CONFIG.USE_CELERY:
+        logger.info(f"👷 Workers Celery: {ANALYSIS_CONFIG.CELERY_WORKERS}")
+        logger.info(f"🔧 Prefetch: {CELERY_WORKER_PREFETCH_MULTIPLIER}")
+        logger.info(f"🔄 Max tasks/child: {CELERY_WORKER_MAX_TASKS_PER_CHILD}")
+
+    logger.info(f"⏱️  Timeout total: {ANALYSIS_TIMEOUT}s ({ANALYSIS_TIMEOUT//60}min)")
+    logger.info(f"🔵 Timeout SonarQube: {SONARQUBE_TIMEOUT}s ({SONARQUBE_TIMEOUT//60}min)")
+    logger.info(f"🟢 Timeout SourceMeter: {SOURCEMETER_TIMEOUT}s ({SOURCEMETER_TIMEOUT//60}min)")
+    logger.info(f"💾 SonarQube Heap: {SONAR_HEAP_MB}MB (min: {SONAR_MIN_HEAP_MB}MB)")
+    logger.info("=" * 70)
