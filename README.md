@@ -10,7 +10,7 @@
 
 1. **Clonar el repositorio**
 ```bash
-   git clone https://github.com/tu-usuario/nexscat.git
+   git clone https://github.com/CelesteOj22/nexscat.git
    cd nexscat
 ```
 
