@@ -89,10 +89,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_web_local
     restart: unless-stopped
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+    # El entrypoint.sh maneja migrate y collectstatic automáticamente
     volumes:
       - .:/app  # Mount proyecto completo para hot-reload
       - ./media:/app/media
@@ -136,7 +133,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_celery_local
     restart: unless-stopped
-    command: celery -A scat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}
+    command: celery -A iscat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}
     volumes:
       - .:/app
       - ./media:/app/media
@@ -166,7 +163,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_flower_local
     restart: unless-stopped
-    command: celery -A scat flower --port=5555
+    command: celery -A iscat flower --port=5555
     ports:
       - "5555:5555"
     environment:
