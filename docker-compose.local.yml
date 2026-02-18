@@ -17,7 +17,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
-      POSTGRES_DB: ${DB_NAME:-nexscat_docker_dev}
+      POSTGRES_DB: ${DB_NAME:-nexscat_db}
     volumes:
       - postgres_data_local:/var/lib/postgresql/data
     ports:
@@ -58,7 +58,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      SONAR_JDBC_URL: jdbc:postgresql://db:5432/${DB_NAME:-nexscat_docker_dev}
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/${DB_NAME:-nexscat_db}
       SONAR_JDBC_USERNAME: ${DB_USER:-postgres}
       SONAR_JDBC_PASSWORD: ${DB_PASSWORD:-1234}
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
@@ -97,7 +97,7 @@ services:
       - "8000:8000"
     environment:
       #  CORREGIDO - Sintaxis correcta
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_docker_dev}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
       # Django
       DEBUG: ${DEBUG:-True}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}

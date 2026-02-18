@@ -6,17 +6,17 @@
 
 set -e  # Salir si hay errores
 
-echo "🚀 Iniciando NexSCAT..."
+echo "Iniciando NexSCAT..."
 
 # ============================================
 # 1. Esperar a que PostgreSQL esté listo
 # ============================================
-echo "⏳ Esperando PostgreSQL..."
+echo " Esperando PostgreSQL..."
 until nc -z db 5432; do
   echo "   PostgreSQL aún no está listo - esperando..."
   sleep 1
 done
-echo "✅ PostgreSQL conectado"
+echo " PostgreSQL conectado"
 
 # ============================================
 # 2. Buscar y cargar configuración de entorno
@@ -24,15 +24,15 @@ echo "✅ PostgreSQL conectado"
 echo "📥 Buscando configuración de entorno..."
 
 if [ -f /app/.env.local ]; then
-    echo "✅ Usando .env.local existente"
+    echo " Usando .env.local existente"
     export $(grep -v '^#' /app/.env.local | tr -d '\r' | xargs)
 elif [ -f /app/.env ]; then
-    echo "✅ Usando .env existente"
+    echo " Usando .env existente"
     export $(grep -v '^#' /app/.env | tr -d '\r' | xargs)
 else
-    echo "📝 Generando .env automáticamente con valores por defecto..."
+    echo " Generando .env automáticamente con valores por defecto..."
     cat > /app/.env << 'EOF'
-DB_NAME=nexscat_docker_dev
+DB_NAME=nexscat_db
 DB_USER=postgres
 DB_PASSWORD=1234
 DB_HOST=db
@@ -55,7 +55,7 @@ SOURCEMETER_TIMEOUT=900
 SONAR_HEAP_MB=2048
 SONAR_MIN_HEAP_MB=512
 EOF
-    echo "✅ .env generado automáticamente"
+    echo " .env generado automáticamente"
     export $(grep -v '^#' /app/.env | tr -d '\r' | xargs)
 fi
 
@@ -65,7 +65,7 @@ fi
 CURRENT_SECRET_KEY="${SECRET_KEY:-}"
 
 if [ -z "$CURRENT_SECRET_KEY" ] || [ "$CURRENT_SECRET_KEY" = "dev-secret-key-not-for-production" ]; then
-    echo "🔐 Generando SECRET_KEY automáticamente..."
+    echo " Generando SECRET_KEY automáticamente..."
     NEW_SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
     
     # Actualizar en el archivo de configuración actual
@@ -77,9 +77,9 @@ if [ -z "$CURRENT_SECRET_KEY" ] || [ "$CURRENT_SECRET_KEY" = "dev-secret-key-not
     
     # Exportar para esta sesión
     export SECRET_KEY=$NEW_SECRET_KEY
-    echo "✅ SECRET_KEY generado y configurado"
+    echo " SECRET_KEY generado y configurado"
 else
-    echo "✅ SECRET_KEY ya está configurado"
+    echo " SECRET_KEY ya está configurado"
 fi
 
 # ============================================
@@ -89,16 +89,16 @@ fi
 if [ "$SKIP_MIGRATIONS" != "True" ]; then
     echo "🗄️  Aplicando migraciones de base de datos..."
     python manage.py migrate --noinput
-    echo "✅ Migraciones aplicadas"
+    echo " Migraciones aplicadas"
     
     # ============================================
     # 4.5. Poblar datos iniciales (métricas + admin)
     # ============================================
-    echo "🌱 Poblando datos iniciales (métricas de SourceMeter y SonarQube)..."
+    echo " Poblando datos iniciales (métricas de SourceMeter y SonarQube)..."
     python manage.py seed_data
-    echo "✅ Datos iniciales cargados"
+    echo " Datos iniciales cargados"
 else
-    echo "⏭️  Saltando migraciones (SKIP_MIGRATIONS=True)"
+    echo "  Saltando migraciones (SKIP_MIGRATIONS=True)"
     echo "   Las migraciones y datos fueron ejecutados por el contenedor 'web'"
 fi
 
@@ -107,9 +107,9 @@ fi
 # ============================================
 # Solo web hace collectstatic
 if [ "$SKIP_MIGRATIONS" != "True" ]; then
-    echo "📦 Recolectando archivos estáticos..."
+    echo " Recolectando archivos estáticos..."
     python manage.py collectstatic --noinput --clear
-    echo "✅ Archivos estáticos recolectados"
+    echo " Archivos estáticos recolectados"
 fi
 
 # ============================================
@@ -118,16 +118,16 @@ fi
 if [ "$SKIP_MIGRATIONS" != "True" ]; then
     echo ""
     echo "======================================================================"
-    echo "✅ NexSCAT inicializado correctamente"
+    echo " NexSCAT inicializado correctamente"
     echo "======================================================================"
-    echo "🌐 Aplicación: http://localhost:8000"
-    echo "📊 SonarQube: http://localhost:9000"
-    echo "🌺 Flower: http://localhost:5555"
+    echo " Aplicación: http://localhost:8000"
+    echo " SonarQube: http://localhost:9000"
+    echo " Flower: http://localhost:5555"
     echo ""
 
     # Verificar token de SonarQube
     if [ -z "$SONARQUBE_TOKEN" ]; then
-        echo "⚠️  SONARQUBE_TOKEN no configurado"
+        echo "  SONARQUBE_TOKEN no configurado"
         echo "   Para habilitar análisis de código:"
         echo "   1. Acceder a http://localhost:9000"
         echo "   2. Login: admin/admin"
