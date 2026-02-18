@@ -17,7 +17,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
-      POSTGRES_DB: ${DB_NAME:-nexscat_db}
+      POSTGRES_DB: ${DB_NAME:-nexscat_docker_dev}
     volumes:
       - postgres_data_local:/var/lib/postgresql/data
     ports:
@@ -58,7 +58,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      SONAR_JDBC_URL: jdbc:postgresql://db:5432/${DB_NAME:-nexscat_db}
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/${DB_NAME:-nexscat_docker_dev}
       SONAR_JDBC_USERNAME: ${DB_USER:-postgres}
       SONAR_JDBC_PASSWORD: ${DB_PASSWORD:-1234}
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
@@ -96,8 +96,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # ✅ CORREGIDO - Sintaxis correcta
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
+      #  CORREGIDO - Sintaxis correcta
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_docker_dev}
       # Django
       DEBUG: ${DEBUG:-True}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
@@ -133,12 +133,13 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_celery_local
     restart: unless-stopped
-    command: celery -A iscat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}
+    #  IMPORTANTE: Esperar 15 segundos a que web termine migrate, luego solo inicia celery
+    command: bash -c "sleep 15 && celery -A iscat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}"
     volumes:
       - .:/app
       - ./media:/app/media
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_docker_dev}
       SONARQUBE_URL: ${SONARQUBE_URL:-http://sonarqube:9000}
       SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
@@ -146,11 +147,15 @@ services:
       ANALYSIS_MODE: ${ANALYSIS_MODE:-parallel}
       USE_CELERY: ${USE_CELERY:-True}
       IS_DOCKER: "True"
+      #  NO RUN MIGRATIONS - Solo web lo hace
+      SKIP_MIGRATIONS: "True"
     depends_on:
       redis:
         condition: service_healthy
       db:
         condition: service_healthy
+      web:
+        condition: service_started
     networks:
       - nexscat_network
 
@@ -163,12 +168,15 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_flower_local
     restart: unless-stopped
-    command: celery -A iscat flower --port=5555
+    #  IMPORTANTE: Esperar a que web termine migrate
+    command: bash -c "sleep 15 && celery -A iscat flower --port=5555"
     ports:
       - "5555:5555"
     environment:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      #  NO RUN MIGRATIONS
+      SKIP_MIGRATIONS: "True"
     depends_on:
       - redis
       - celery_worker
