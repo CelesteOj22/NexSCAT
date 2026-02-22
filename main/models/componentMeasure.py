@@ -11,5 +11,5 @@ class ComponentMeasure(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'component_measures'

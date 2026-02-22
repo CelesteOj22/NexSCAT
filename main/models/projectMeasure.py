@@ -11,5 +11,5 @@ class ProjectMeasure(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'project_measures'

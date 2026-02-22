@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     postgresql-client \
     netcat-openbsd \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================

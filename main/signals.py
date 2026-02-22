@@ -8,13 +8,20 @@ from .models import SonarToken
 @receiver(post_save, sender=User)
 def create_sonar_token(sender, instance, created, **kwargs):
     if created:
-        # Crea un registro en la tabla existente al crear un usuario
-        SonarToken.objects.create(user=instance, token='')
+        try:
+            from django.db import connection
+            if 'sonar_token' in connection.introspection.table_names():
+                SonarToken.objects.create(user=instance, token='')
+        except Exception:
+            pass  # Tabla no existe aún durante migraciones, se ignora
 
 
 @receiver(post_save, sender=User)
 def save_sonar_token(sender, instance, **kwargs):
-    if hasattr(instance, 'sonartoken'):
-        instance.sonartoken.save()
-
-
+    try:
+        from django.db import connection
+        if 'sonar_token' in connection.introspection.table_names():
+            if hasattr(instance, 'sonartoken'):
+                instance.sonartoken.save()
+    except Exception:
+        pass

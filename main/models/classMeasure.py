@@ -11,5 +11,5 @@ class ClassMeasure(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'class_measures'

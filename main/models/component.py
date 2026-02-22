@@ -12,5 +12,5 @@ class Component(models.Model):
         return self.path
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'components'
