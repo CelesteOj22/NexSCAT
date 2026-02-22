@@ -1,5 +1,7 @@
 import os
+import time  # 🔥 AGREGADO
 import pathlib
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login
@@ -14,7 +16,7 @@ from .forms import SonarTokenForm
 
 from .services.user import UserService
 
-from .tasks import analizar_proyecto_completo,analizar_proyecto_paralelo, test_celery
+from .tasks import analizar_proyecto_completo, analizar_proyecto_paralelo, test_celery
 from celery.result import AsyncResult
 
 import json
@@ -32,21 +34,14 @@ from django.core.exceptions import ValidationError
 
 
 def homepage(request):
-    # print(Projects.objects.all().query)
-    # print(Projects.objects.all())
-    # metrics_query = Metrics.objects.all().query
-    # print(metrics_query)
-    # metrics1 = Metrics.objects.all()
-    # print(metrics1)  # Verifica los resultados en la consola
-    # parametros de render(request,template,content/data)
     return render(request=request, template_name="main/Index.html")
+
 
 @login_required
 def estado_herramientas(request):
     """
     Vista para verificar el estado de las herramientas de análisis
     """
-    # Obtener token del usuario
     token = None
     try:
         token_obj = SonarToken.objects.get(user=request.user)
@@ -54,7 +49,6 @@ def estado_herramientas(request):
     except SonarToken.DoesNotExist:
         pass
 
-    # Verificar estado de SonarQube
     sonar_status = {
         'nombre': 'SonarQube',
         'disponible': False,
@@ -75,7 +69,6 @@ def estado_herramientas(request):
     else:
         sonar_status['mensaje'] = 'Token no configurado. Configure su token para verificar el estado.'
 
-    # Verificar estado de SourceMeter
     sourcemeter_status = {
         'nombre': 'SourceMeter',
         'disponible': False,
@@ -123,7 +116,7 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect('main:home')  # nombre de la URL definida para el home
+            return redirect('main:home')
         else:
             messages.error(request, 'Nombre de usuario o contraseña incorrectos.')
 
@@ -179,7 +172,6 @@ def importarProyecto(request):
             print("MODO: SINCRONO (SIN CELERY) - USANDO SSE")
             print("=" * 60)
 
-            # Guardar en sesión para SSE
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 request.session['analysis_path'] = path
                 request.session['analysis_user_id'] = request.user.id
@@ -198,7 +190,6 @@ def _analizar_asincrono(request, proyectos, usu_token):
     """
     Análisis asíncrono usando Celery con paralelismo real
     """
-    # Detectar si el paralelismo está habilitado
     parallel_enabled = settings.ANALYSIS_CONFIG.ENABLE_PARALLEL
     mode_name = "PARALELO" if parallel_enabled else "ASÍNCRONO"
 
@@ -223,7 +214,6 @@ def _analizar_asincrono(request, proyectos, usu_token):
         try:
             print(f"\n[{idx}/{total_projects}] 🚀 Lanzando análisis para: {proyecto.name}")
 
-            # Primero crear el proyecto en la BD
             from .models import Project
             from main.services.factory import sonar
 
@@ -243,16 +233,13 @@ def _analizar_asincrono(request, proyectos, usu_token):
             else:
                 print(f"  🔄 Proyecto existente: {project.name} (ID: {project.id_project})")
 
-            # 🔥 Decidir qué tarea usar según configuración
             if parallel_enabled:
-                # Usar análisis paralelo (SonarQube y SourceMeter simultáneos)
                 print(f"  ⚡ Modo: PARALELO (Sonar + Source simultáneos)")
                 task = analizar_proyecto_paralelo.delay(
                     project_id=project.id_project,
                     token=usu_token.token
                 )
             else:
-                # Usar análisis secuencial tradicional
                 print(f"  🔄 Modo: SECUENCIAL (Sonar → Source)")
                 task = analizar_proyecto_completo.delay(
                     proyecto_path=str(proyecto),
@@ -260,6 +247,7 @@ def _analizar_asincrono(request, proyectos, usu_token):
                     token=usu_token.token
                 )
 
+            from django.utils import timezone
             task_info = {
                 'project_id': project.id_project,
                 'project_name': proyecto.name,
@@ -278,9 +266,14 @@ def _analizar_asincrono(request, proyectos, usu_token):
             messages.error(request, f"Error en {proyecto.name}: {str(e)}")
 
     if task_ids:
-        # Guardar en sesión
         request.session['analysis_tasks'] = task_ids
         request.session['analysis_mode'] = 'parallel' if parallel_enabled else 'sequential'
+
+        # 🔥 AGREGADO: guardar tiempo de inicio y nombres para calcular duración del lote
+        request.session['batch_started_at'] = time.time()
+        request.session['batch_project_names'] = [p.name for p in proyectos]
+        request.session['batch_time_saved'] = False
+
         request.session.modified = True
 
         mode_emoji = "⚡" if parallel_enabled else "🔄"
@@ -304,11 +297,15 @@ def _analizar_asincrono(request, proyectos, usu_token):
         messages.error(request, "No se pudieron lanzar las tareas de análisis")
         return render(request, 'main/importarProyecto.html')
 
+
 def _analizar_sincrono(request, proyectos, usu_token):
     """
     Análisis síncrono sin Celery
     """
     print(f"Comenzando el análisis de {len(proyectos)} proyecto/s de forma síncrona")
+
+    tiempo_inicio = time.time()  # 🔥 AGREGADO
+    nombres_proyectos = [p.name for p in proyectos]  # 🔥 AGREGADO
 
     proyectos_exitosos = 0
     proyectos_fallidos = 0
@@ -318,10 +315,8 @@ def _analizar_sincrono(request, proyectos, usu_token):
         try:
             print(f"🔍 Analizando: {proyecto.name}")
 
-            # Importar la función de la tarea (sin .delay())
             from .tasks import _analizar_proyecto_logica
 
-            # Llamar directamente a la lógica (sin Celery)
             resultado = _analizar_proyecto_logica(
                 proyecto_path=str(proyecto),
                 usuario_id=request.user.id,
@@ -342,7 +337,12 @@ def _analizar_sincrono(request, proyectos, usu_token):
             print(f"❌ Error en {proyecto.name}: {str(e)}")
             errores.append(f"{proyecto.name}: {str(e)}")
 
-    # Mostrar resultados
+    # 🔥 AGREGADO: guardar tiempo total del lote
+    tiempo_total = time.time() - tiempo_inicio
+    estado = "exitoso" if proyectos_fallidos == 0 else "con_errores"
+    _guardar_tiempo_lote(nombres_proyectos, tiempo_total, estado)
+    print(f"⏱️ Lote completado en {tiempo_total:.2f}s ({tiempo_total / 60:.2f} min) — Estado: {estado}")
+
     if proyectos_exitosos > 0:
         messages.success(
             request,
@@ -355,13 +355,12 @@ def _analizar_sincrono(request, proyectos, usu_token):
             f"⚠️ {proyectos_fallidos} proyecto(s) fallaron"
         )
 
-        # Mostrar detalles de errores
-        for error in errores[:3]:  # Mostrar máximo 3 errores
+        for error in errores[:3]:
             messages.error(request, error)
 
     return redirect('main:dashboardAnalisis')
 
-# 🔥 NUEVA VISTA: Monitorear progreso de análisis
+
 @login_required
 def monitorear_analisis(request):
     """
@@ -402,7 +401,6 @@ def verificar_tarea(request, task_id):
         response['total_steps'] = 5
 
     elif task.state == 'PROGRESS':
-        # Estado personalizado con info detallada
         info = task.info
         response['status'] = info.get('status', 'Procesando...')
         response['progress'] = info.get('percent', 0)
@@ -410,7 +408,6 @@ def verificar_tarea(request, task_id):
         response['total_steps'] = info.get('total_steps', 5)
         response['mode'] = info.get('mode', 'sequential')
 
-        # 🔥 Info adicional de paralelismo
         if info.get('mode') == 'parallel':
             response['sonar_task_id'] = info.get('sonar_task_id')
             response['source_task_id'] = info.get('source_task_id')
@@ -423,7 +420,6 @@ def verificar_tarea(request, task_id):
         response['total_steps'] = 5
         response['result'] = result
 
-        # 🔥 Mostrar métricas de paralelismo
         if isinstance(result, dict):
             response['mode'] = result.get('mode', 'sequential')
 
@@ -432,7 +428,6 @@ def verificar_tarea(request, task_id):
                 response['time_saved'] = result.get('time_saved', 0)
                 response['total_time'] = result.get('total_time', 0)
 
-                # Formatear mensaje con speedup
                 speedup = result.get('speedup', 1.0)
                 time_saved = result.get('time_saved', 0)
 
@@ -457,34 +452,59 @@ def verificar_tarea(request, task_id):
 
     return JsonResponse(response)
 
+
 @login_required
 def verificar_tareas_batch(request):
     """
     API para verificar el estado de múltiples tareas
     POST con {"task_ids": ["id1", "id2", ...]}
     """
-    import json
-
     if request.method == 'POST':
         data = json.loads(request.body)
         task_ids = data.get('task_ids', [])
 
         results = []
+        all_done = True
+
         for task_id in task_ids:
             task = AsyncResult(task_id)
+            ready = task.ready()
+            if not ready:
+                all_done = False
             results.append({
                 'task_id': task_id,
                 'state': task.state,
-                'ready': task.ready(),
-                'successful': task.successful() if task.ready() else None,
+                'ready': ready,
+                'successful': task.successful() if ready else None,
             })
 
-        return JsonResponse({'tasks': results})
+        # 🔥 AGREGADO: guardar tiempo del lote cuando todas las tareas terminaron
+        if all_done and not request.session.get('batch_time_saved'):
+            started_at = request.session.get('batch_started_at')
+            nombres = request.session.get('batch_project_names', [])
+
+            if started_at:
+                tiempo_total = time.time() - started_at
+                all_successful = all(r.get('successful') for r in results)
+                estado = "exitoso" if all_successful else "con_errores"
+
+                _guardar_tiempo_lote(
+                    proyectos=nombres,
+                    tiempo_total=tiempo_total,
+                    estado=estado
+                )
+
+                # Marcar como guardado para no duplicar si el cliente vuelve a consultar
+                request.session['batch_time_saved'] = True
+                request.session.modified = True
+
+                print(f"⏱️ Lote (Celery) completado en {tiempo_total:.2f}s ({tiempo_total / 60:.2f} min) — Estado: {estado}")
+
+        return JsonResponse({'tasks': results, 'all_done': all_done})
 
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
-# 🔥 VISTA OPCIONAL: Análisis individual con Celery
 @login_required
 @token_required
 def analizar_proyecto_individual(request, project_id):
@@ -495,14 +515,12 @@ def analizar_proyecto_individual(request, project_id):
     usu_token = SonarToken.objects.get(user=request.user)
 
     try:
-        # Lanzar análisis asíncrono
         task = analizar_proyecto_completo.delay(
             proyecto_path=project.path,
             usuario_id=request.user.id,
             token=usu_token.token
         )
 
-        # Guardar task_id en la sesión
         request.session[f'task_{project.id}'] = task.id
 
         messages.success(
@@ -517,7 +535,6 @@ def analizar_proyecto_individual(request, project_id):
         return redirect('main:dashboardAnalisis')
 
 
-# 🔥 VISTA DE PRUEBA: Probar Celery
 @login_required
 def test_celery_view(request):
     """
@@ -543,7 +560,7 @@ def configurarToken(request):
         form = SonarTokenForm(request.POST, instance=token_obj)
         if form.is_valid():
             form.save()
-            return redirect('main:home')  # Cambiar por la url que quieras
+            return redirect('main:home')
     else:
         form = SonarTokenForm(instance=token_obj)
 
@@ -555,22 +572,13 @@ def dashboardAnalisis(request):
     """
     Vista del dashboard con estructura jerárquica
     """
-    # Obtener el nivel seleccionado (por defecto: Proyecto)
     selected_level = request.GET.get('level', 'Proyecto')
-
-    # Obtener el número de página
     page_number = request.GET.get('page', 1)
 
-    # Obtener todos los proyectos del usuario (o todos si es admin)
     projects = Project.objects.all().order_by('name')
-
-    # Obtener todas las métricas disponibles
     metrics = Metric.objects.all().order_by('name')
-
-    # Obtener todas las herramientas únicas
     tools = Metric.objects.values_list('tool', flat=True).distinct()
 
-    # Preparar datos jerárquicos
     hierarchical_data = []
 
     for project in projects:
@@ -585,7 +593,6 @@ def dashboardAnalisis(request):
             'components': []
         }
 
-        # Métricas del proyecto (si nivel == Proyecto o Todos)
         if selected_level in ['Proyecto', 'Todos']:
             project_measures = ProjectMeasure.objects.filter(
                 id_project=project
@@ -602,7 +609,6 @@ def dashboardAnalisis(request):
                     'domain': pm.id_metric.domain,
                 })
 
-        # Componentes (si nivel == Componente, Clase o Todos)
         if selected_level in ['Componente', 'Clase', 'Todos']:
             components = Component.objects.filter(
                 id_project=project
@@ -622,7 +628,6 @@ def dashboardAnalisis(request):
                     'classes': []
                 }
 
-                # Métricas del componente
                 if selected_level in ['Componente', 'Todos']:
                     comp_measures = ComponentMeasure.objects.filter(
                         id_component=component
@@ -639,7 +644,6 @@ def dashboardAnalisis(request):
                             'domain': cm.id_metric.domain,
                         })
 
-                # Clases (si nivel == Clase o Todos)
                 if selected_level in ['Clase', 'Todos']:
                     classes = Class.objects.filter(
                         id_component=component
@@ -654,7 +658,6 @@ def dashboardAnalisis(request):
                             'measures': []
                         }
 
-                        # Métricas de la clase
                         class_measures = ClassMeasure.objects.filter(
                             id_class=class_obj
                         ).select_related('id_metric').order_by('id_metric__name')
@@ -676,25 +679,22 @@ def dashboardAnalisis(request):
 
         hierarchical_data.append(project_node)
 
-    # Calcular estadísticas
     total_projects = projects.count()
     total_project_measures = ProjectMeasure.objects.count()
     total_component_measures = ComponentMeasure.objects.count()
     total_class_measures = ClassMeasure.objects.count()
 
-    # Total de métricas según el nivel
     if selected_level == 'Proyecto':
         total_measures = total_project_measures
     elif selected_level == 'Componente':
         total_measures = total_component_measures
     elif selected_level == 'Clase':
         total_measures = total_class_measures
-    else:  # Todos
+    else:
         total_measures = total_project_measures + total_component_measures + total_class_measures
 
     total_tools = len(tools)
 
-    # Último análisis
     last_analysis = Project.objects.filter(
         last_analysis_sq__isnull=False
     ).aggregate(Max('last_analysis_sq'))['last_analysis_sq__max']
@@ -719,21 +719,12 @@ def dashboardAnalisis(request):
 
 @login_required
 def ver_resultados(request, project_id):
-    """
-    Vista para mostrar los resultados detallados del análisis de un proyecto
-    """
     project = get_object_or_404(Project, id=project_id)
 
-    # Verificar que el usuario tenga permiso (opcional)
-    # if project.user != request.user:
-    #     return HttpResponseForbidden()
-
-    # Métricas del proyecto
     project_measures = ProjectMeasure.objects.filter(
         id_project=project
     ).select_related('id_metric').order_by('id_metric__name')
 
-    # Componentes con sus métricas
     components = Component.objects.filter(
         id_project=project
     ).prefetch_related('componentmeasure_set__id_metric').order_by('path')
@@ -746,7 +737,6 @@ def ver_resultados(request, project_id):
             'measures': component.componentmeasure_set.all()
         })
 
-    # Clases (si aplica)
     classes = Component.objects.filter(
         id_project=project,
         qualifier='CLS'
@@ -775,7 +765,6 @@ def is_celery_available():
     """
     try:
         from celery import current_app
-        # Intentar hacer ping al broker
         current_app.connection().ensure_connection(max_retries=1)
         return True
     except Exception as e:
@@ -787,9 +776,7 @@ def is_celery_available():
 def analizar_sse(request):
     """
     Vista para Server-Sent Events (streaming de progreso)
-    IMPORTANTE: EventSource siempre usa GET
     """
-    # Obtener datos de la sesión
     path = request.session.get('analysis_path')
     user_id = request.session.get('analysis_user_id')
     token = request.session.get('analysis_token')
@@ -814,26 +801,26 @@ def analizar_sse(request):
 
     directorio = pathlib.Path(path)
     proyectos = [p for p in directorio.iterdir() if p.is_dir()]
+    nombres_proyectos = [p.name for p in proyectos]  # 🔥 AGREGADO
 
     def event_stream():
         """
         Generador que yielda eventos SSE durante el análisis
         """
+        tiempo_inicio = time.time()  # 🔥 AGREGADO
+
         try:
             for proyecto in proyectos:
-                # Llamar a la lógica con callback para SSE
-                for event_data in _analizar_proyecto_con_sse(
-                        str(proyecto),
-                        user_id,
-                        token
-                ):
-                    # Formatear como Server-Sent Event
+                for event_data in _analizar_proyecto_con_sse(str(proyecto), user_id, token):
                     yield f"data: {json.dumps(event_data)}\n\n"
 
-            # Evento final de completado
+            # 🔥 AGREGADO: guardar tiempo total del lote al completar
+            tiempo_total = time.time() - tiempo_inicio
+            _guardar_tiempo_lote(nombres_proyectos, tiempo_total, estado="exitoso")
+            print(f"⏱️ Lote (SSE) completado en {tiempo_total:.2f}s ({tiempo_total / 60:.2f} min)")
+
             yield f"data: {json.dumps({'type': 'complete', 'redirect': '/dashboardAnalisis/'})}\n\n"
 
-            # Limpiar sesión
             if 'analysis_path' in request.session:
                 del request.session['analysis_path']
             if 'analysis_user_id' in request.session:
@@ -842,17 +829,15 @@ def analizar_sse(request):
                 del request.session['analysis_token']
 
         except Exception as e:
+            # 🔥 AGREGADO: guardar tiempo incluso en caso de error
+            tiempo_total = time.time() - tiempo_inicio
+            _guardar_tiempo_lote(nombres_proyectos, tiempo_total, estado="fallido")
+
             logger.error(f"Error en SSE: {str(e)}")
-            error_data = {
-                'type': 'error',
-                'message': str(e)
-            }
+            error_data = {'type': 'error', 'message': str(e)}
             yield f"data: {json.dumps(error_data)}\n\n"
 
-    response = StreamingHttpResponse(
-        event_stream(),
-        content_type='text/event-stream'
-    )
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
@@ -868,13 +853,7 @@ def _analizar_proyecto_con_sse(proyecto_path: str, usuario_id: int, token: str):
         proyecto_path = pathlib.Path(proyecto_path)
         project_key = sonar.normalizar_project_key(proyecto_path.name)
 
-        # Evento 1: Inicialización
-        yield {
-            'type': 'progress',
-            'step': 1,
-            'percent': 10,
-            'message': f'Inicializando {proyecto_path.name}...'
-        }
+        yield {'type': 'progress', 'step': 1, 'percent': 10, 'message': f'Inicializando {proyecto_path.name}...'}
 
         print(f"\n{'=' * 60}")
         print(f"ANALIZANDO: {proyecto_path.name}")
@@ -897,168 +876,84 @@ def _analizar_proyecto_con_sse(proyecto_path: str, usuario_id: int, token: str):
         else:
             print(f"Proyecto existente: {project.name} (ID: {project.id_project})")
 
-        yield {
-            'type': 'progress',
-            'step': 1,
-            'percent': 20,
-            'message': 'Proyecto listo para análisis'
-        }
+        yield {'type': 'progress', 'step': 1, 'percent': 20, 'message': 'Proyecto listo para análisis'}
 
-        # Evento 2: SonarQube
         print("\n" + "=" * 60)
         print("FASE 1: Análisis con SonarQube")
         print("=" * 60)
 
-        yield {
-            'type': 'progress',
-            'step': 2,
-            'percent': 25,
-            'message': 'Ejecutando análisis de SonarQube...'
-        }
+        yield {'type': 'progress', 'step': 2, 'percent': 25, 'message': 'Ejecutando análisis de SonarQube...'}
 
         scanner_path = settings.SONAR_SCANNER_PATH
-        success_sonar, mensaje_sonar = sonar.analizar(
-            scanner_path,
-            str(proyecto_path),
-            token
-        )
+        success_sonar, mensaje_sonar = sonar.analizar(scanner_path, str(proyecto_path), token)
 
         if success_sonar:
             print("SonarQube: Análisis completado exitosamente")
-
-            yield {
-                'type': 'progress',
-                'step': 2,
-                'percent': 45,
-                'message': 'SonarQube completado, esperando procesamiento...'
-            }
-
+            yield {'type': 'progress', 'step': 2, 'percent': 45, 'message': 'SonarQube completado, esperando procesamiento...'}
             print("Procesando métricas de SonarQube...")
-
-            yield {
-                'type': 'progress',
-                'step': 2,
-                'percent': 50,
-                'message': 'Procesando métricas de SonarQube...'
-            }
-
+            yield {'type': 'progress', 'step': 2, 'percent': 50, 'message': 'Procesando métricas de SonarQube...'}
             sonar.procesar_con_reintentos(project, token, project_key, max_reintentos=3)
-
             print("SonarQube: Métricas procesadas y guardadas")
-
-            yield {
-                'type': 'progress',
-                'step': 2,
-                'percent': 60,
-                'message': 'Métricas de SonarQube guardadas'
-            }
+            yield {'type': 'progress', 'step': 2, 'percent': 60, 'message': 'Métricas de SonarQube guardadas'}
         else:
             print(f"SonarQube falló: {mensaje_sonar}")
-            yield {
-                'type': 'error',
-                'message': f'SonarQube falló: {mensaje_sonar}'
-            }
+            yield {'type': 'error', 'message': f'SonarQube falló: {mensaje_sonar}'}
             return
 
-        # Evento 3: SourceMeter
         print("\n" + "=" * 60)
         print("FASE 2: Análisis con SourceMeter")
         print("=" * 60)
 
-        yield {
-            'type': 'progress',
-            'step': 3,
-            'percent': 65,
-            'message': 'Ejecutando análisis de SourceMeter...'
-        }
+        yield {'type': 'progress', 'step': 3, 'percent': 65, 'message': 'Ejecutando análisis de SourceMeter...'}
 
         scanner_path = settings.SOURCEMETER_PATH
-        success_source, mensaje_source = source.analizar(
-            scanner_path,
-            str(proyecto_path),
-            proyecto_path.name
-        )
+        success_source, mensaje_source = source.analizar(scanner_path, str(proyecto_path), proyecto_path.name)
 
         if success_source:
             print("SourceMeter: Análisis completado exitosamente")
-
-            yield {
-                'type': 'progress',
-                'step': 3,
-                'percent': 75,
-                'message': 'SourceMeter completado, procesando métricas...'
-            }
-
+            yield {'type': 'progress', 'step': 3, 'percent': 75, 'message': 'SourceMeter completado, procesando métricas...'}
             print("Procesando métricas de SourceMeter...")
-
             source.procesar(project, proyecto_path.name)
-
             print("SourceMeter: Métricas procesadas y guardadas")
-
-            yield {
-                'type': 'progress',
-                'step': 3,
-                'percent': 90,
-                'message': 'Métricas de SourceMeter guardadas'
-            }
+            yield {'type': 'progress', 'step': 3, 'percent': 90, 'message': 'Métricas de SourceMeter guardadas'}
         else:
             print(f"SourceMeter: {mensaje_source}")
-            yield {
-                'type': 'progress',
-                'step': 3,
-                'percent': 85,
-                'message': f'Advertencia en SourceMeter: {mensaje_source}'
-            }
+            yield {'type': 'progress', 'step': 3, 'percent': 85, 'message': f'Advertencia en SourceMeter: {mensaje_source}'}
 
-        # Evento 4: Finalización
         print(f"\n{'=' * 60}")
         print(f"ANÁLISIS COMPLETADO: {proyecto_path.name}")
         print(f"   SonarQube: {'OK' if success_sonar else 'Error'}")
         print(f"   SourceMeter: {'OK' if success_source else 'Warning'}")
         print(f"{'=' * 60}\n")
 
-        yield {
-            'type': 'progress',
-            'step': 5,
-            'percent': 100,
-            'message': 'Análisis completado exitosamente'
-        }
+        yield {'type': 'progress', 'step': 5, 'percent': 100, 'message': 'Análisis completado exitosamente'}
 
     except Exception as e:
         print(f"\nERROR GENERAL: {str(e)}")
         import traceback
         traceback.print_exc()
-
-        yield {
-            'type': 'error',
-            'message': str(e)
-        }
+        yield {'type': 'error', 'message': str(e)}
 
 
 def is_superuser(user):
-    """Verifica si el usuario es superusuario"""
     return user.is_superuser
 
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def user_management(request):
-    """Vista principal de administración de usuarios"""
     service = UserService()
 
-    # Obtener usuarios con filtros
     users_list = service.get_users_with_filters(
         search=request.GET.get('search'),
         status=request.GET.get('status'),
         role=request.GET.get('role')
     )
 
-    # Paginación
     paginator = Paginator(users_list, 15)
     page = request.GET.get('page')
     users = paginator.get_page(page)
 
-    # Estadísticas
     statistics = service.get_user_statistics()
 
     context = {
@@ -1072,7 +967,6 @@ def user_management(request):
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def create_user(request):
-    """Crear nuevo usuario"""
     if request.method == 'POST':
         service = UserService()
 
@@ -1103,7 +997,6 @@ def create_user(request):
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def get_user(request, user_id):
-    """Obtener datos de usuario (JSON)"""
     service = UserService()
 
     try:
@@ -1117,7 +1010,6 @@ def get_user(request, user_id):
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
-    """Editar usuario"""
     if request.method == 'POST':
         service = UserService()
 
@@ -1148,7 +1040,6 @@ def edit_user(request, user_id):
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def delete_user(request, user_id):
-    """Eliminar usuario"""
     if request.method == 'POST':
         service = UserService()
 
@@ -1169,13 +1060,10 @@ def delete_user(request, user_id):
 def obtener_datos_jerarquicos(request):
     """
     Endpoint que devuelve los datos en formato jerárquico
-    GET /api/export/hierarchical/?level=Todos
     """
     selected_level = request.GET.get('level', 'Todos')
 
-    # Obtener todos los proyectos
     projects = Project.objects.all()
-
     data = []
 
     for project in projects:
@@ -1189,7 +1077,6 @@ def obtener_datos_jerarquicos(request):
             'project_measures': []
         }
 
-        # Métricas del proyecto (si nivel == Proyecto o Todos)
         if selected_level in ['Proyecto', 'Todos']:
             project_measures = ProjectMeasure.objects.filter(
                 id_project=project
@@ -1206,27 +1093,23 @@ def obtener_datos_jerarquicos(request):
                     'tool': pm.id_metric.tool
                 })
 
-        # Componentes (si nivel == Componente, Clase o Todos)
         project_data['components'] = []
 
         if selected_level in ['Componente', 'Clase', 'Todos']:
-            components = Component.objects.filter(
-                id_project=project
-            ).order_by('path')
+            components = Component.objects.filter(id_project=project).order_by('path')
 
             for component in components:
                 component_data = {
                     'component': {
                         'id': component.id_component,
-                        'name': component.path,  # Usar path como nombre
+                        'name': component.path,
                         'qualifier': component.qualifier,
                         'path': component.path,
-                        'language': ''  # Component no tiene language
+                        'language': ''
                     },
                     'component_measures': []
                 }
 
-                # Métricas del componente
                 if selected_level in ['Componente', 'Todos']:
                     comp_measures = ComponentMeasure.objects.filter(
                         id_component=component
@@ -1243,28 +1126,24 @@ def obtener_datos_jerarquicos(request):
                             'tool': cm.id_metric.tool
                         })
 
-                # Clases (si nivel == Clase o Todos)
                 component_data['classes'] = []
 
                 if selected_level in ['Clase', 'Todos']:
                     try:
                         from .models import Class, ClassMeasure
 
-                        classes = Class.objects.filter(
-                            id_component=component
-                        )
+                        classes = Class.objects.filter(id_component=component)
 
                         for class_obj in classes:
                             class_data = {
                                 'class': {
                                     'id': class_obj.id_class,
                                     'name': class_obj.name,
-                                    'qualifier': ''  # Class no tiene qualifier
+                                    'qualifier': ''
                                 },
                                 'class_measures': []
                             }
 
-                            # Métricas de la clase
                             class_measures = ClassMeasure.objects.filter(
                                 id_class=class_obj
                             ).select_related('id_metric')
@@ -1274,8 +1153,7 @@ def obtener_datos_jerarquicos(request):
                                     'domain': clm.id_metric.domain if hasattr(clm.id_metric, 'domain') else '',
                                     'key': clm.id_metric.key,
                                     'name': clm.id_metric.name,
-                                    'description': clm.id_metric.description if hasattr(clm.id_metric,
-                                                                                        'description') else '',
+                                    'description': clm.id_metric.description if hasattr(clm.id_metric, 'description') else '',
                                     'type': clm.id_metric.type if hasattr(clm.id_metric, 'type') else '',
                                     'value': str(clm.value or ''),
                                     'tool': clm.id_metric.tool
@@ -1283,7 +1161,6 @@ def obtener_datos_jerarquicos(request):
 
                             component_data['classes'].append(class_data)
                     except ImportError:
-                        # Si no existe el modelo Class, continuar sin clases
                         pass
 
                 project_data['components'].append(component_data)
@@ -1298,15 +1175,9 @@ def estadisticas_paralelo(request):
     """
     Vista para mostrar estadísticas de análisis paralelo vs secuencial
     """
-    from .models import Project
-    from django.db.models import Avg, Count, Sum
-    import json
-
-    # Obtener tareas de la sesión
     tasks = request.session.get('analysis_tasks', [])
     mode = request.session.get('analysis_mode', 'sequential')
 
-    # Calcular estadísticas
     stats = {
         'total_projects': len(tasks),
         'mode': mode,
@@ -1335,7 +1206,6 @@ def estadisticas_paralelo(request):
         else:
             stats['pending'] += 1
 
-    # Promedio de speedup
     if stats['completed'] > 0:
         stats['avg_speedup'] = stats['total_speedup'] / stats['completed']
     else:
@@ -1347,3 +1217,29 @@ def estadisticas_paralelo(request):
     }
 
     return render(request, 'main/estadisticas_paralelo.html', context)
+
+
+def _guardar_tiempo_lote(proyectos: list, tiempo_total: float, estado: str = "exitoso"):
+    """Guarda el tiempo total del lote en un archivo JSON."""
+
+    log_dir = pathlib.Path(settings.BASE_DIR) / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "batch_times.json"
+
+    if log_file.exists():
+        with open(log_file, "r") as f:
+            registros = json.load(f)
+    else:
+        registros = []
+
+    registros.append({
+        "fecha": datetime.now().isoformat(),
+        "cantidad_proyectos": len(proyectos),
+        "proyectos": proyectos,
+        "tiempo_segundos": round(tiempo_total, 2),
+        "tiempo_minutos": round(tiempo_total / 60, 2),
+        "estado": estado
+    })
+
+    with open(log_file, "w") as f:
+        json.dump(registros, f, indent=2, ensure_ascii=False)
