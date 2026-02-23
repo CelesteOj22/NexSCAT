@@ -1,5 +1,6 @@
 #services/sonarQube.py
 import logging
+import os
 import subprocess
 import time
 from abc import ABC
@@ -13,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class SonarQube(IHerramienta, ABC):
-    def __init__(self, binaries: str, host="http://127.0.0.1:9000"):
+    def __init__(self, binaries: str, host=None):
         self._sources = "."
-        self._hosturl = host
+        self._hosturl = host or os.environ.get("SONARQUBE_URL", "http://127.0.0.1:9000")
         self._binaries = binaries
 
     def analizar(self, scanner, project_path: str, token: str):
