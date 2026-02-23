@@ -79,6 +79,8 @@ services:
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles
+      - C:/:/mnt/c
+    # - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.
     ports:
       - "8000:8000"
     environment:

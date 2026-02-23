@@ -122,6 +122,13 @@ def login_view(request):
 
     return render(request, 'registration/login.html')
 
+def traducir_ruta(path):
+    # Convierte "C:\Users\Cele\proyectos" -> "/mnt/c/Users/Cele/proyectos"
+    path = path.replace('\\', '/')
+    if len(path) >= 2 and path[1] == ':':
+        drive = path[0].lower()
+        path = f"/mnt/{drive}" + path[2:]
+    return path
 
 @login_required
 @token_required
@@ -130,8 +137,8 @@ def importarProyecto(request):
     Vista adaptativa con soporte para AJAX y SSE
     """
     if request.method == 'POST':
-        path = request.POST.get('path')
-
+        path_orig = request.POST.get('path')
+        path = traducir_ruta(path_orig)
         if not os.path.isdir(path):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'error': 'La ruta ingresada no es válida.'}, status=400)
