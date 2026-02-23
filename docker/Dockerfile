@@ -58,7 +58,7 @@ RUN pip install --upgrade pip && \
 # ============================================
 # Crear estructura de directorios
 # ============================================
-RUN mkdir -p /app/tools/linux \
+RUN mkdir -p /opt/tools \
     && mkdir -p /app/media \
     && mkdir -p /app/staticfiles
 
@@ -67,40 +67,38 @@ RUN mkdir -p /app/tools/linux \
 # ============================================
 RUN echo "Descargando SonarScanner..." && \
     wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip && \
-    unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip -d /app/tools/linux/ && \
-    mv /app/tools/linux/sonar-scanner-5.0.1.3006-linux /app/tools/linux/sonar-scanner && \
+    unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip -d /opt/tools/ && \
+    mv /opt/tools/sonar-scanner-5.0.1.3006-linux /opt/tools/sonar-scanner && \
     rm sonar-scanner-cli-5.0.1.3006-linux.zip && \
-    chmod +x /app/tools/linux/sonar-scanner/bin/sonar-scanner && \
+    chmod +x /opt/tools/sonar-scanner/bin/sonar-scanner && \
     echo "SonarScanner instalado correctamente"
 
 # ============================================
 # INSTALAR SOURCEMETER (desde archivo local)
 # ============================================
-# Copiar el archivo .tgz desde la carpeta tools/
 COPY tools/SourceMeter-10.2.0-x64-Linux.tgz /tmp/sourcemeter.tgz
 
-# Descomprimir e instalar (con inspección de estructura)
 RUN echo "Instalando SourceMeter desde archivo local..." && \
-    tar -xzf /tmp/sourcemeter.tgz -C /app/tools/linux/ && \
+    tar -xzf /tmp/sourcemeter.tgz -C /opt/tools/ && \
     rm /tmp/sourcemeter.tgz && \
-    echo "Listando contenido de /app/tools/linux/:" && \
-    ls -la /app/tools/linux/ && \
-    SM_DIR=$(find /app/tools/linux -maxdepth 1 -type d -name "SourceMeter*" | head -n 1) && \
+    echo "Listando contenido de /opt/tools/:" && \
+    ls -la /opt/tools/ && \
+    SM_DIR=$(find /opt/tools -maxdepth 1 -type d -name "SourceMeter*" | head -n 1) && \
     echo "Directorio encontrado: $SM_DIR" && \
-    mv "$SM_DIR" /app/tools/linux/sourcemeter && \
+    mv "$SM_DIR" /opt/tools/sourcemeter && \
     echo "Listando contenido de sourcemeter:" && \
-    ls -la /app/tools/linux/sourcemeter/ && \
-    find /app/tools/linux/sourcemeter -type f -name "*Java*" -o -name "*Python*" -o -name "*CPP*" | head -20 && \
-    chmod +x /app/tools/linux/sourcemeter/Java/SourceMeterJava 2>/dev/null || echo "SourceMeterJava no encontrado en Java/" && \
-    chmod +x /app/tools/linux/sourcemeter/Python/SourceMeterPython 2>/dev/null || echo "SourceMeterPython no encontrado en Python/" && \
-    chmod +x /app/tools/linux/sourcemeter/CPP/SourceMeterCPP 2>/dev/null || echo "SourceMeterCPP no encontrado en CPP/" && \
-    chmod -R +x /app/tools/linux/sourcemeter/ 2>/dev/null || true && \
+    ls -la /opt/tools/sourcemeter/ && \
+    find /opt/tools/sourcemeter -type f -name "*Java*" -o -name "*Python*" -o -name "*CPP*" | head -20 && \
+    chmod +x /opt/tools/sourcemeter/Java/SourceMeterJava 2>/dev/null || echo "SourceMeterJava no encontrado en Java/" && \
+    chmod +x /opt/tools/sourcemeter/Python/SourceMeterPython 2>/dev/null || echo "SourceMeterPython no encontrado en Python/" && \
+    chmod +x /opt/tools/sourcemeter/CPP/SourceMeterCPP 2>/dev/null || echo "SourceMeterCPP no encontrado en CPP/" && \
+    chmod -R +x /opt/tools/sourcemeter/ 2>/dev/null || true && \
     echo "SourceMeter instalado correctamente"
 
 # ============================================
 # Configurar PATH para las herramientas
 # ============================================
-ENV PATH="/app/tools/linux/sonar-scanner/bin:/app/tools/linux/sourcemeter/Java:${PATH}"
+ENV PATH="/opt/tools/sonar-scanner/bin:/opt/tools/sourcemeter/Java:${PATH}"
 
 # Verificar que las herramientas estén disponibles
 RUN echo "Verificando herramientas instaladas..." && \

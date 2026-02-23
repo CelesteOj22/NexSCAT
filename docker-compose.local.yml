@@ -92,6 +92,8 @@ services:
     volumes:
       - .:/app
       - ./media:/app/media
+      - C:/:/mnt/c
+      - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.
     ports:
       - "8000:8000"
     environment:
