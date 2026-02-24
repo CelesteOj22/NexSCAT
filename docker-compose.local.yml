@@ -4,7 +4,6 @@
 # Alto rendimiento - Análisis paralelo
 # ============================================
 name: nexscat
-version: "3.8"
 
 services:
   # ============================================
@@ -49,7 +48,7 @@ services:
       retries: 5
 
   # ============================================
-  # SonarQube Server (Más recursos)
+  # SonarQube Server
   # ============================================
   sonarqube:
     image: sonarqube:10.3-community
@@ -81,7 +80,7 @@ services:
       start_period: 120s
 
   # ============================================
-  # Django Web Application (Development mode)
+  # Django Web Application
   # ============================================
   web:
     build:
@@ -89,6 +88,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: nexscat_web_local
     restart: unless-stopped
+    init: true
     volumes:
       - .:/app
       - ./media:/app/media
@@ -97,29 +97,25 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Database
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-1234}
       DB_HOST: db
       DB_PORT: 5432
-      # Django
       DEBUG: ${DEBUG:-True}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-not-for-production}
+      DJANGO_SETTINGS_MODULE: iscat.settings
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      # SonarQube
       SONARQUBE_URL: ${SONARQUBE_URL:-http://sonarqube:9000}
       SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
-      # Celery
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      # Análisis
       ANALYSIS_MODE: ${ANALYSIS_MODE:-parallel}
       USE_CELERY: ${USE_CELERY:-True}
       MAX_PARALLEL_ANALYSIS: ${MAX_PARALLEL_ANALYSIS:-6}
       CELERY_WORKERS: ${CELERY_WORKERS:-6}
-      # Docker flag
+      ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-1800}
       IS_DOCKER: "True"
       CONTAINER_TYPE: "web"
     depends_on:
@@ -131,6 +127,12 @@ services:
         condition: service_healthy
     networks:
       - nexscat_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # ============================================
   # Celery Worker (Análisis paralelo)
@@ -146,23 +148,23 @@ services:
       - .:/app
       - ./media:/app/media
     environment:
-      # Database
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-1234}
       DB_HOST: db
       DB_PORT: 5432
-      # SonarQube
+      DEBUG: ${DEBUG:-True}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-not-for-production}
+      DJANGO_SETTINGS_MODULE: iscat.settings
       SONARQUBE_URL: ${SONARQUBE_URL:-http://sonarqube:9000}
       SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
-      # Celery
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      # Análisis
       ANALYSIS_MODE: ${ANALYSIS_MODE:-parallel}
       USE_CELERY: ${USE_CELERY:-True}
-      # Docker flag
+      CELERY_WORKERS: ${CELERY_WORKERS:-6}
+      ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-1800}
       IS_DOCKER: "True"
       CONTAINER_TYPE: "celery"
     depends_on:
@@ -170,8 +172,6 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
-      web:
-        condition: service_started
     networks:
       - nexscat_network
 
@@ -194,10 +194,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-1234}
       DB_HOST: db
       DB_PORT: 5432
-      # Celery
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      # Docker flag
       IS_DOCKER: "True"
       CONTAINER_TYPE: "flower"
     depends_on:
@@ -207,7 +205,7 @@ services:
       - nexscat_network
 
 # ============================================
-# Volúmenes persistentes (local)
+# Volúmenes persistentes
 # ============================================
 volumes:
   postgres_data_local:

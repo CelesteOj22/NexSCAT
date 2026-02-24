@@ -234,8 +234,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 def get_tool_paths():
     if IS_DOCKER:
         return {
-            'sonar_scanner': '/app/tools/linux/sonar-scanner/bin/sonar-scanner',
-            'sourcemeter': '/app/tools/linux/sourcemeter/Java/SourceMeterJava',
+            'sonar_scanner': '/opt/tools/sonar-scanner/bin/sonar-scanner',
+            'sourcemeter': '/opt/tools/sourcemeter/Java/AnalyzerJava',
         }
     elif IS_WINDOWS:
         return {

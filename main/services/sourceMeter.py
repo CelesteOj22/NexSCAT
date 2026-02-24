@@ -1,4 +1,5 @@
 #services/sourceMeter.py
+import platform as platform_module
 import shutil
 import subprocess
 import time
@@ -366,7 +367,8 @@ class SourceMeter(IHerramienta):
         Busca primero en PATH, luego en la ruta configurada en settings.py
         """
         # 1. Intentar encontrar en PATH (si está como variable de entorno)
-        if shutil.which("SourceMeterJava") is not None:
+        executable = "AnalyzerJava" if platform_module.system() == "Linux" else "SourceMeterJava"
+        if shutil.which(executable) is not None:
             print("✅ SourceMeter encontrado en PATH del sistema")
             return True
 

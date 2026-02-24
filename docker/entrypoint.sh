@@ -67,13 +67,13 @@ CURRENT_SECRET_KEY="${SECRET_KEY:-}"
 if [ -z "$CURRENT_SECRET_KEY" ] || [ "$CURRENT_SECRET_KEY" = "dev-secret-key-not-for-production" ]; then
     echo " Generando SECRET_KEY automáticamente..."
     NEW_SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-    
+
     if [ -f /app/.env.local ]; then
         sed -i "s|SECRET_KEY=.*|SECRET_KEY=$NEW_SECRET_KEY|" /app/.env.local
     elif [ -f /app/.env ]; then
         sed -i "s|SECRET_KEY=.*|SECRET_KEY=$NEW_SECRET_KEY|" /app/.env
     fi
-    
+
     export SECRET_KEY=$NEW_SECRET_KEY
     echo " SECRET_KEY generado y configurado"
 else
@@ -123,6 +123,17 @@ else
 fi
 
 # ============================================
-# 5. Ejecutar el comando pasado al contenedor
+# 5. Ejecutar el comando según el tipo de contenedor
 # ============================================
-exec "$@"
+if [ "${CONTAINER_TYPE}" = "celery" ]; then
+    echo "⚙️  Iniciando Celery Worker..."
+    exec celery -A iscat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}
+
+elif [ "${CONTAINER_TYPE}" = "flower" ]; then
+    echo "🌸 Iniciando Flower..."
+    exec celery -A iscat flower --port=5555
+
+else
+    echo "🌐 Iniciando Django..."
+    exec python manage.py runserver 0.0.0.0:8000
+fi

@@ -31,6 +31,7 @@ urlpatterns = [
     path('dashboardAnalisis/', views.dashboardAnalisis, name='dashboardAnalisis'),
     path('estado/', views.estado_herramientas, name='estado_herramientas'),
     # NUEVAS URLs para Celery
+    path('verificar_tarea/<str:task_id>/', views.verificar_tarea, name='verificar_tarea'),
     path('monitorear-analisis/', views.monitorear_analisis, name='monitorear_analisis'),
     path('api/tarea/<str:task_id>/', views.verificar_tarea, name='verificar_tarea'),
     path('api/tareas-batch/', views.verificar_tareas_batch, name='verificar_tareas_batch'),

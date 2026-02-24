@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Metric, Component, ProjectMeasure, ComponentMeasure, Class, ClassMeasure
+from .models import Project, Metric, Component, ProjectMeasure, ComponentMeasure, Class, ClassMeasure,SonarToken
 
 # Register your models here.
 
@@ -10,4 +10,4 @@ admin.site.register(ProjectMeasure)
 admin.site.register(ComponentMeasure)
 admin.site.register(Class)
 admin.site.register(ClassMeasure)
-
+admin.site.register(SonarToken)
