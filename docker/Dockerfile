@@ -109,6 +109,8 @@ RUN echo "Verificando herramientas instaladas..." && \
 # Copiar código de la aplicación
 # ============================================
 COPY . /app/
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh && \
+    chmod +x /app/docker/entrypoint.sh
 
 # ============================================
 # Recolectar archivos estáticos
