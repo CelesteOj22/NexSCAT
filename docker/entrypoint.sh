@@ -97,6 +97,17 @@ if [ "${CONTAINER_TYPE}" = "web" ]; then
     python manage.py collectstatic --noinput --clear
     echo " Archivos estáticos recolectados"
 
+    echo "⏳ Esperando que SonarQube esté operativo..."
+    until curl -s -u admin:admin http://sonarqube:9000/api/system/status | grep -q '"status":"UP"'; do
+    sleep 5
+    done
+
+echo "🔐 Asignando permiso Execute Analysis al admin..."
+curl -s -u admin:admin -X POST \
+    "http://sonarqube:9000/api/permissions/add_user" \
+    -d "login=admin&permission=scan" || true
+echo "✅ Permisos configurados"
+
     echo ""
     echo "======================================================================"
     echo " NexSCAT inicializado correctamente"
@@ -126,8 +137,11 @@ fi
 # 5. Ejecutar el comando según el tipo de contenedor
 # ============================================
 if [ "${CONTAINER_TYPE}" = "celery" ]; then
-    echo "⚙️  Iniciando Celery Worker..."
-    exec celery -A iscat worker --loglevel=info --concurrency=${CELERY_WORKERS:-6}
+    echo "⚙️  Iniciando Celery Workers..."
+    # Worker para tareas coordinadoras
+    celery -A iscat worker --loglevel=info --concurrency=4 -Q celery &
+    # Worker para subtareas de análisis
+    celery -A iscat worker --loglevel=info --concurrency=4 -Q analysis
 
 elif [ "${CONTAINER_TYPE}" = "flower" ]; then
     echo "🌸 Iniciando Flower..."

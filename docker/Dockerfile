@@ -31,18 +31,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================
-# Instalar Java 17 (adoptium/temurin)
+# Instalar Java 17 y Java 11 (adoptium/temurin)
 # ============================================
 RUN mkdir -p /etc/apt/keyrings && \
     wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc && \
     echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
     apt-get update && \
-    apt-get install -y temurin-17-jdk && \
+    apt-get install -y temurin-17-jdk temurin-11-jdk && \
     rm -rf /var/lib/apt/lists/*
 
-# Verificar instalación de Java
-RUN java -version
+# Java 17 como default del sistema
+ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Java 11 disponible para SourceMeter
+ENV JAVA11_HOME=/usr/lib/jvm/temurin-11-jdk-amd64
+
+# Verificar instalación
+RUN java -version && \
+    ${JAVA11_HOME}/bin/java -version
 # ============================================
 # Configurar directorio de trabajo
 # ============================================

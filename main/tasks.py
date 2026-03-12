@@ -12,6 +12,8 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
+import os
+
 from main.services.factory import sonar, source
 from .models import Project
 
@@ -194,7 +196,14 @@ def analizar_con_sourcemeter(self, project_id: int):
         log_step(1, 2, "Ejecutando análisis de SourceMeter...", EMOJI_SOURCE)
         start_time = time.time()
 
-        success, mensaje = source.analizar(project_path, project_key, project_name)
+        # ✅ FIX: pasar source_executable como primer argumento, igual que SonarQube
+        # source_executable = settings.SOURCEMETER_PATH
+        # success, mensaje = source.analizar(source_executable, project_path, project_name)
+        source_executable = settings.SOURCEMETER_PATH
+        java11_home = getattr(settings, 'JAVA11_HOME', '/usr/lib/jvm/java-11-openjdk-amd64')
+        #os.environ['JAVA_HOME'] = java11_home
+        #//os.environ['PATH'] = f"{java11_home}/bin:{os.environ.get('PATH', '')}"
+        success, mensaje = source.analizar(source_executable, project_path, project_name)
 
         elapsed = time.time() - start_time
 
@@ -219,7 +228,7 @@ def analizar_con_sourcemeter(self, project_id: int):
         process_start = time.time()
 
         with transaction.atomic():
-            source.procesar(project, project_key)
+            source.procesar(project, project_name)
 
         process_elapsed = time.time() - process_start
         total_elapsed = time.time() - start_time
@@ -306,8 +315,8 @@ def analizar_proyecto_paralelo(self, project_id: int, token: str):
         print("=" * 70)
 
         analysis_group = group(
-            analizar_con_sonarqube.s(project_id, token),
-            analizar_con_sourcemeter.s(project_id)
+            analizar_con_sonarqube.s(project_id, token).set(queue='analysis'),
+            analizar_con_sourcemeter.s(project_id).set(queue='analysis')
         )
 
         # Ejecutar y esperar resultados
@@ -513,12 +522,19 @@ def _analizar_proyecto_logica(proyecto_path: str, usuario_id: int, token: str, p
         # SourceMeter
         update_progress(3, "Ejecutando análisis de SourceMeter...", 65)
 
-        success_source, mensaje_source = source.analizar(str(proyecto_path), project_key, proyecto_path.name)
+        # ✅ FIX: pasar source_executable como primer argumento
+        # source_executable = settings.SOURCEMETER_PATH
+        # success_source, mensaje_source = source.analizar(source_executable, str(proyecto_path), proyecto_path.name)
+        source_executable = settings.SOURCEMETER_PATH
+        java11_home = getattr(settings, 'JAVA11_HOME', '/usr/lib/jvm/java-11-openjdk-amd64')
+        os.environ['JAVA_HOME'] = java11_home
+        os.environ['PATH'] = f"{java11_home}/bin:{os.environ.get('PATH', '')}"
+        success_source, mensaje_source = source.analizar(source_executable, str(proyecto_path), proyecto_path.name)
 
         if success_source:
             update_progress(3, "SourceMeter completado, procesando métricas...", 75)
             with transaction.atomic():
-                source.procesar(project, project_key)
+                source.procesar(project, proyecto_path.name)
             update_progress(3, "Métricas de SourceMeter guardadas", 90)
         else:
             update_progress(3, f"Advertencia en SourceMeter: {mensaje_source}", 85)

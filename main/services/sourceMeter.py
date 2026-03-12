@@ -1,4 +1,5 @@
 #services/sourceMeter.py
+import os
 import platform as platform_module
 import shutil
 import subprocess
@@ -17,14 +18,24 @@ class SourceMeter(IHerramienta):
     def __init__(self, resultsDir: str = None):
         self._runFB = 'true'
         self._FBFileList = 'filelist.txt'
+    
+    def _get_java11_env(self):
+        env = os.environ.copy()
+        java11_home = os.environ.get('JAVA11_HOME', '/usr/lib/jvm/temurin-11-jdk-amd64')
+        env['JAVA_HOME'] = java11_home
+        # Poner java11/bin ANTES que /usr/bin en el PATH
+        # Y agregar override para que /usr/bin/java sea ignorado
+        env['PATH'] = f"{java11_home}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        return env
 
-    def analizar(self, source, project_path: str, project_name:str):
+    def analizar(self, source, project_path: str, project_name: str):
         """
         Analiza un proyecto Java con SourceMeter
 
         Args:
-            source: Path al ejecutable de SourceMeter (ej: SourceMeterJava.exe)
+            source: Path al ejecutable de SourceMeter (ej: AnalyzerJava)
             project_path: Path al proyecto a analizar
+            project_name: Nombre del proyecto
 
         Returns:
             tuple: (success: bool, message: str)
@@ -35,7 +46,10 @@ class SourceMeter(IHerramienta):
         if not project_path.exists():
             return False, f"❌ El directorio {project_path} no existe"
 
-        results_base = project_path / "SMResults"
+        # FIX: usar /tmp para evitar cross-device link entre volúmenes Docker
+        #results_base = project_path / "SMResults"
+        results_base = Path(f"/tmp/SMResults/{project_name}")
+        results_base.mkdir(parents=True, exist_ok=True)
 
         comando = [
             source,
@@ -46,6 +60,10 @@ class SourceMeter(IHerramienta):
             f"-FBFileList={self._FBFileList}"
         ]
 
+        # FIX: usar Java 11 para SourceMeter (requiere exactamente Java 11)
+        java11_env = self._get_java11_env()
+        print(f"☕ SourceMeter usando JAVA_HOME: {java11_env.get('JAVA_HOME')}")
+
         try:
             result = subprocess.run(
                 comando,
@@ -53,7 +71,8 @@ class SourceMeter(IHerramienta):
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
                 check=True,
-                cwd=project_path
+                cwd=project_path,
+                env=java11_env  # ✅ entorno con Java 11
             )
 
             stdout = result.stdout
@@ -83,9 +102,10 @@ class SourceMeter(IHerramienta):
         Busca el directorio de análisis más reciente
         Ruta: project_path/SMResults/project_name/java/TIMESTAMP/
         """
-
-        results_base = project_path / "SMResults" / project_name / "java"
-        print(f"RESULT BASE BITCH {results_base}")
+        #results_base = project_path / "SMResults" / project_name / "java"
+        #FIX: buscar en /tmp donde realmente se guardan los resultados
+        results_base = Path(f"/tmp/SMResults/{project_name}/java")
+        print(f"RESULT BASE {results_base}")
         if not results_base.exists():
             print(f"❌ No existe {results_base}")
             return None
@@ -376,7 +396,6 @@ class SourceMeter(IHerramienta):
         sourcemeter_path = getattr(settings, 'SOURCEMETER_PATH', None)
 
         if sourcemeter_path:
-            # Convertir a Path para manejo multiplataforma
             path_obj = Path(sourcemeter_path)
 
             if path_obj.exists():

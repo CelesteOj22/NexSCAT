@@ -31,13 +31,13 @@ except ImportError:
         MAX_PARALLEL_ANALYSIS = 1
         ENABLE_PARALLEL = False
         USE_CELERY = False
-        ANALYSIS_TIMEOUT = 600
+        ANALYSIS_TIMEOUT = 3600
         CELERY_WORKERS = 1
         CELERY_WORKER_PREFETCH_MULTIPLIER = 1
         CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
         CELERY_TASK_ACKS_LATE = True
-        SONARQUBE_TIMEOUT = 600
-        SOURCEMETER_TIMEOUT = 300
+        SONARQUBE_TIMEOUT = 1800
+        SOURCEMETER_TIMEOUT = 600
         SONAR_HEAP_MB = 512
         SONAR_MIN_HEAP_MB = 128
     ANALYSIS_CONFIG = AnalysisConfig
@@ -252,6 +252,8 @@ TOOL_PATHS = get_tool_paths()
 SONAR_SCANNER_PATH = TOOL_PATHS['sonar_scanner']
 SOURCEMETER_PATH = TOOL_PATHS['sourcemeter']
 
+# ✅ AGREGADO: Java 11 para SourceMeter (requiere exactamente Java 11)
+JAVA11_HOME = os.environ.get('JAVA11_HOME', '/usr/lib/jvm/temurin-11-jdk-amd64')
 # ============================================
 # SONARQUBE CONFIGURATION
 # ============================================

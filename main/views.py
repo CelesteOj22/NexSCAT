@@ -197,6 +197,9 @@ def _analizar_asincrono(request, proyectos, usu_token):
     """
     Análisis asíncrono usando Celery con paralelismo real
     """
+    from django.db import transaction
+    from celery import uuid as celery_uuid
+
     parallel_enabled = settings.ANALYSIS_CONFIG.ENABLE_PARALLEL
     mode_name = "PARALELO" if parallel_enabled else "ASÍNCRONO"
 
@@ -240,32 +243,38 @@ def _analizar_asincrono(request, proyectos, usu_token):
             else:
                 print(f"  🔄 Proyecto existente: {project.name} (ID: {project.id_project})")
 
+            task_id = celery_uuid()
+
             if parallel_enabled:
                 print(f"  ⚡ Modo: PARALELO (Sonar + Source simultáneos)")
-                task = analizar_proyecto_paralelo.delay(
-                    project_id=project.id_project,
-                    token=usu_token.token
+                transaction.on_commit(
+                    lambda pid=project.id_project, tid=task_id, tok=usu_token.token:
+                        analizar_proyecto_paralelo.apply_async(
+                            kwargs={'project_id': pid, 'token': tok},
+                            task_id=tid
+                        )
                 )
             else:
                 print(f"  🔄 Modo: SECUENCIAL (Sonar → Source)")
-                task = analizar_proyecto_completo.delay(
-                    proyecto_path=str(proyecto),
-                    usuario_id=request.user.id,
-                    token=usu_token.token
+                transaction.on_commit(
+                    lambda path=str(proyecto), uid=request.user.id, tid=task_id, tok=usu_token.token:
+                        analizar_proyecto_completo.apply_async(
+                            kwargs={'proyecto_path': path, 'usuario_id': uid, 'token': tok},
+                            task_id=tid
+                        )
                 )
 
             from django.utils import timezone
             task_info = {
                 'project_id': project.id_project,
                 'project_name': proyecto.name,
-                'task_id': task.id,
+                'task_id': task_id,
                 'mode': 'parallel' if parallel_enabled else 'sequential',
                 'started_at': timezone.now().isoformat()
             }
 
             task_ids.append(task_info)
-
-            print(f"  ✅ Tarea lanzada (Task ID: {task.id})")
+            print(f"  ✅ Tarea lanzada (Task ID: {task_id})")
 
         except Exception as e:
             print(f"  ❌ Error lanzando tarea para {proyecto.name}: {str(e)}")
@@ -275,12 +284,9 @@ def _analizar_asincrono(request, proyectos, usu_token):
     if task_ids:
         request.session['analysis_tasks'] = task_ids
         request.session['analysis_mode'] = 'parallel' if parallel_enabled else 'sequential'
-
-        # 🔥 AGREGADO: guardar tiempo de inicio y nombres para calcular duración del lote
         request.session['batch_started_at'] = time.time()
         request.session['batch_project_names'] = [p.name for p in proyectos]
         request.session['batch_time_saved'] = False
-
         request.session.modified = True
 
         mode_emoji = "⚡" if parallel_enabled else "🔄"
