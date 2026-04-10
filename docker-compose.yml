@@ -77,7 +77,7 @@ services:
              python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 300 scat.wsgi:application"
     volumes:
-      - ./media:/app/media
+      #- ./media:/app/media
       - static_volume:/app/staticfiles
       - C:/:/mnt/c
       - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.

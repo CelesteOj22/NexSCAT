@@ -92,11 +92,11 @@ services:
     user: "0:0"
     volumes:
       - .:/app
-      - ./media:/app/media
-      - /media:/media
+      #- ./media:/app/media
+      #- /media:/media
      # solucion para WSL2 sobre Windows
-     # - C:/:/mnt/c
-     # - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.
+      - C:/:/mnt/c
+      - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.
     ports:
       - "8000:8000"
     environment:
@@ -170,7 +170,7 @@ services:
       CELERY_WORKERS: ${CELERY_WORKERS:-6}
       CELERY_TASK_TIME_LIMIT: "7200"
       CELERY_TASK_SOFT_TIME_LIMIT: "7000"
-      ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-1800}
+      ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-7200}
       IS_DOCKER: "True"
       CONTAINER_TYPE: "celery"
     depends_on:
