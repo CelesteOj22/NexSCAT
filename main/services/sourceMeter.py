@@ -48,7 +48,7 @@ class SourceMeter(IHerramienta):
 
         # FIX: usar /tmp para evitar cross-device link entre volúmenes Docker
         #results_base = project_path / "SMResults"
-        results_base = Path(f"/tmp/SMResults/{project_name}")
+        results_base = Path(f"/app/proyectos/{project_name}/SMResults")
         results_base.mkdir(parents=True, exist_ok=True)
 
         comando = [
@@ -104,7 +104,7 @@ class SourceMeter(IHerramienta):
         """
         #results_base = project_path / "SMResults" / project_name / "java"
         #FIX: buscar en /tmp donde realmente se guardan los resultados
-        results_base = Path(f"/tmp/SMResults/{project_name}/java")
+        results_base = Path(f"/app/proyectos/{project_name}/SMResults/java")
         print(f"RESULT BASE {results_base}")
         if not results_base.exists():
             print(f"❌ No existe {results_base}")
