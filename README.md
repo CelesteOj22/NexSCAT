@@ -14,7 +14,7 @@
 - Mínimo **8 GB de RAM** recomendado
 - Mínimo **20 GB de espacio en disco**
 
-> ⚠️ **Windows no está soportado para análisis con SourceMeter.**  
+> ⚠️ **Análisis con SourceMeter en Windows/WSL2.**  
 > SourceMeter requiere que sus binarios y el directorio de resultados estén en el mismo filesystem.  
 > En Windows/WSL2 esto es imposible por la separación entre el overlay de Docker y los bind mounts del host.  
 > Se debe ejecutar desde Linux o una VM Linux.
