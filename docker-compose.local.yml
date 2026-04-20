@@ -92,8 +92,10 @@ services:
     user: "0:0"
     volumes:
       - .:/app
-      #- ./media:/app/media
-      #- /media:/media
+      - ./media:/app/media
+      - /media:/media
+      - ./sm_results:/opt/sm_results
+      - ./tools/sourcemeter:/opt/tools/sourcemeter
      # solucion para WSL2 sobre Windows
       - C:/:/mnt/c
       - D:/:/mnt/d   # descomentá si tenés los proyectos en el disco D o modificá con la letra de tu partición.
@@ -121,6 +123,7 @@ services:
       ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-1800}
       IS_DOCKER: "True"
       CONTAINER_TYPE: "web"
+      SCAT_MODE: "development"
     depends_on:
       db:
         condition: service_healthy
@@ -151,6 +154,8 @@ services:
       - .:/app
       - ./media:/app/media
       - /media:/media
+      - ./sm_results:/opt/sm_results
+      - ./tools/sourcemeter:/opt/tools/sourcemeter
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@db:5432/${DB_NAME:-nexscat_db}
       DB_NAME: ${DB_NAME:-nexscat_db}
@@ -173,6 +178,7 @@ services:
       ANALYSIS_TIMEOUT: ${ANALYSIS_TIMEOUT:-7200}
       IS_DOCKER: "True"
       CONTAINER_TYPE: "celery"
+      SCAT_MODE: "development"
     depends_on:
       redis:
         condition: service_healthy

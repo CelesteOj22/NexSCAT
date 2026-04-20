@@ -150,15 +150,15 @@ class AnalysisConfig:
 
     if MODE == 'production':
         # AWS / Cloud - Recursos limitados - Análisis secuencial
-        MAX_PARALLEL_ANALYSIS = 1
-        CELERY_WORKERS = 1
-        ENABLE_PARALLEL = False
-        USE_CELERY = False
+        MAX_PARALLEL_ANALYSIS = 2
+        CELERY_WORKERS = 2
+        ENABLE_PARALLEL = True
+        USE_CELERY = True
 
         # Timeouts (en segundos)
-        ANALYSIS_TIMEOUT = 600  # 10 minutos total
-        SONARQUBE_TIMEOUT = 300  # 5 minutos para Sonar
-        SOURCEMETER_TIMEOUT = 300  # 5 minutos para Source
+        ANALYSIS_TIMEOUT = 7200  # 10 minutos total
+        SONARQUBE_TIMEOUT = 7200  # 5 minutos para Sonar
+        SOURCEMETER_TIMEOUT = 7200  # 5 minutos para Source
 
         # SonarQube memory
         SONAR_HEAP_MB, SONAR_MIN_HEAP_MB = 512, 128
@@ -170,9 +170,9 @@ class AnalysisConfig:
         ENABLE_PARALLEL = True
         USE_CELERY = True
 
-        ANALYSIS_TIMEOUT = 1200
-        SONARQUBE_TIMEOUT = 600
-        SOURCEMETER_TIMEOUT = 600
+        ANALYSIS_TIMEOUT =7200
+        SONARQUBE_TIMEOUT = 7200
+        SOURCEMETER_TIMEOUT = 7200
 
         SONAR_HEAP_MB, SONAR_MIN_HEAP_MB = 1024, 256
 
@@ -184,9 +184,9 @@ class AnalysisConfig:
         ENABLE_PARALLEL = workers > 1
         USE_CELERY = workers > 1
 
-        ANALYSIS_TIMEOUT = 1500
-        SONARQUBE_TIMEOUT = 900
-        SOURCEMETER_TIMEOUT = 600
+        ANALYSIS_TIMEOUT = 7200
+        SONARQUBE_TIMEOUT = 7200
+        SOURCEMETER_TIMEOUT = 7200
 
         SONAR_HEAP_MB, SONAR_MIN_HEAP_MB = get_sonarqube_memory_limits(TOTAL_RAM_GB)
 
