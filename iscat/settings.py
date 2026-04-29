@@ -14,6 +14,15 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Directorio donde se guardan los proyectos subidos/clonados
+# En el contenedor Django, este path debe existir y tener permisos de escritura
+PROYECTOS_DIR = os.environ.get('PROYECTOS_DIR', '/app/proyectos')
+
+# Tamaño máximo de upload (para ZIPs grandes ~3GB)
+# Django por defecto limita a 2.5MB - necesitamos aumentarlo
+DATA_UPLOAD_MAX_MEMORY_SIZE = 3 * 1024 * 1024 * 1024   # 3 GB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 3 * 1024 * 1024 * 1024   # 3 GB
+
 # ============================================
 # CONFIGURACIÓN DE ANÁLISIS ADAPTATIVA
 # ============================================
@@ -50,12 +59,16 @@ SECRET_KEY = os.environ.get(
     'django-insecure-#eqw8y+(p-0%u1_(dzap5l@9jn6i$m0by+js7=d2f40)@$tw*2'
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# ✅ Default False para producción
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS',
-    'localhost,127.0.0.1'
-).split(',')
+# ALLOWED_HOSTS = os.environ.get(
+#     'ALLOWED_HOSTS',
+#     'localhost,127.0.0.1'
+# ).split(',')
+
+# ✅ Default * para que funcione con cualquier IP del servidor
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # ============================================
 # DETECCIÓN DE ENTORNO
@@ -322,8 +335,8 @@ if not DEBUG:
 # ============================================
 # CONFIGURACIÓN PERSONALIZADA
 # ============================================
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
-DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024 * 1024   # 5 GB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024 * 1024   # 5 GB
 
 # ============================================
 # VARIABLES PARA DOCKER COMPOSE

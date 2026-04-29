@@ -13,6 +13,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Metric, Component, ProjectMeasure, ComponentMeasure, Class, ClassMeasure, Project, SonarToken
 from main.services.factory import sonar, source
 from .forms import SonarTokenForm
+from main.services.ingesta import ingesta_zip, ingesta_github
 
 from .services.user import UserService
 
@@ -122,31 +123,90 @@ def login_view(request):
 
     return render(request, 'registration/login.html')
 
-def traducir_ruta(path):
-    # Convierte "C:\Users\Cele\proyectos" -> "/mnt/c/Users/Cele/proyectos"
-    path = path.replace('\\', '/')
-    if len(path) >= 2 and path[1] == ':':
-        drive = path[0].lower()
-        path = f"/mnt/{drive}" + path[2:]
-    return path
+# def traducir_ruta(path):
+#     # Convierte "C:\Users\Cele\proyectos" -> "/mnt/c/Users/Cele/proyectos"
+#     path = path.replace('\\', '/')
+#     if len(path) >= 2 and path[1] == ':':
+#         drive = path[0].lower()
+#         path = f"/mnt/{drive}" + path[2:]
+#     return path
+
+# @login_required
+# @token_required
+# def importarProyecto(request):
+#     """
+#     Vista adaptativa con soporte para AJAX y SSE
+#     """
+#     if request.method == 'POST':
+#         path_orig = request.POST.get('path')
+#         path = traducir_ruta(path_orig)
+#         if not os.path.isdir(path):
+#             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#                 return JsonResponse({'error': 'La ruta ingresada no es válida.'}, status=400)
+#             messages.error(request, 'La ruta ingresada no es válida.')
+#             return render(request, 'main/importarProyecto.html')
+
+#         usu_token = SonarToken.objects.get(user=request.user)
+
+#         try:
+#             sonar.check_tool_status(sonar, usu_token.token)
+#         except Exception as e:
+#             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#                 return JsonResponse({'error': str(e)}, status=400)
+#             messages.error(request, str(e))
+#             return render(request, 'main/importarProyecto.html')
+
+#         directorio = pathlib.Path(path)
+#         proyectos = [p for p in directorio.iterdir() if p.is_dir()]
+
+#         celery_disponible = is_celery_available()
+
+#         if celery_disponible:
+#             logger.info("Celery disponible - Ejecutando analisis ASINCRONO")
+#             print("=" * 60)
+#             print("MODO: ASINCRONO CON CELERY")
+#             print("=" * 60)
+
+#             result = _analizar_asincrono(request, proyectos, usu_token)
+
+#             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#                 task_ids = request.session.get('analysis_tasks', [])
+#                 return JsonResponse({'task_ids': task_ids, 'mode': 'async'})
+
+#             return result
+#         else:
+#             logger.info("Celery no disponible - Ejecutando analisis SINCRONO con SSE")
+#             print("=" * 60)
+#             print("MODO: SINCRONO (SIN CELERY) - USANDO SSE")
+#             print("=" * 60)
+
+#             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#                 request.session['analysis_path'] = path
+#                 request.session['analysis_user_id'] = request.user.id
+#                 request.session['analysis_token'] = usu_token.token
+#                 request.session.save()
+
+#                 return JsonResponse({'mode': 'sync', 'use_sse': True})
+
+#             result = _analizar_sincrono(request, proyectos, usu_token)
+#             return result
+
+#     return render(request, 'main/importarProyecto.html')
 
 @login_required
 @token_required
 def importarProyecto(request):
     """
-    Vista adaptativa con soporte para AJAX y SSE
+    Vista adaptativa con soporte para:
+    - Subida de ZIP (descomprime en servidor)
+    - Clone desde GitHub
+    Luego reutiliza el pipeline existente de análisis (Celery o SSE).
     """
     if request.method == 'POST':
-        path_orig = request.POST.get('path')
-        path = traducir_ruta(path_orig)
-        if not os.path.isdir(path):
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': 'La ruta ingresada no es válida.'}, status=400)
-            messages.error(request, 'La ruta ingresada no es válida.')
-            return render(request, 'main/importarProyecto.html')
-
+        import_type = request.POST.get('import_type', 'zip')
         usu_token = SonarToken.objects.get(user=request.user)
-
+ 
+        # Verificar SonarQube disponible
         try:
             sonar.check_tool_status(sonar, usu_token.token)
         except Exception as e:
@@ -154,42 +214,76 @@ def importarProyecto(request):
                 return JsonResponse({'error': str(e)}, status=400)
             messages.error(request, str(e))
             return render(request, 'main/importarProyecto.html')
-
-        directorio = pathlib.Path(path)
-        proyectos = [p for p in directorio.iterdir() if p.is_dir()]
-
+ 
+        # ── INGESTA: obtener el path del proyecto ──────────────────────
+        if import_type == 'zip':
+            zip_file = request.FILES.get('zip_file')
+            if not zip_file:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'error': 'No se recibió ningún archivo ZIP.'}, status=400)
+                messages.error(request, 'No se recibió ningún archivo ZIP.')
+                return render(request, 'main/importarProyecto.html')
+ 
+            success, mensaje, project_path = ingesta_zip(zip_file)
+ 
+        elif import_type == 'github':
+            github_url = request.POST.get('github_url', '').strip()
+            branch = request.POST.get('branch', '').strip() or None
+ 
+            if not github_url:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'error': 'Ingresá la URL del repositorio.'}, status=400)
+                messages.error(request, 'Ingresá la URL del repositorio.')
+                return render(request, 'main/importarProyecto.html')
+ 
+            if not github_url.startswith('https://github.com/'):
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'error': 'La URL debe ser de GitHub (https://github.com/...)'}, status=400)
+                messages.error(request, 'La URL debe ser de GitHub (https://github.com/...).')
+                return render(request, 'main/importarProyecto.html')
+ 
+            success, mensaje, project_path = ingesta_github(github_url, branch)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Tipo de importación no válido.'}, status=400)
+            messages.error(request, 'Tipo de importación no válido.')
+            return render(request, 'main/importarProyecto.html')
+ 
+        # Verificar que la ingesta fue exitosa
+        if not success:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': mensaje}, status=400)
+            messages.error(request, mensaje)
+            return render(request, 'main/importarProyecto.html')
+ 
+        # ── PIPELINE: igual que antes, pero con UN solo proyecto ───────
+        # project_path es el directorio del proyecto listo para analizar
+        proyectos = [project_path]
+ 
         celery_disponible = is_celery_available()
-
+ 
         if celery_disponible:
-            logger.info("Celery disponible - Ejecutando analisis ASINCRONO")
-            print("=" * 60)
-            print("MODO: ASINCRONO CON CELERY")
-            print("=" * 60)
-
+            logger.info("Celery disponible - Ejecutando análisis ASÍNCRONO")
             result = _analizar_asincrono(request, proyectos, usu_token)
-
+ 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 task_ids = request.session.get('analysis_tasks', [])
                 return JsonResponse({'task_ids': task_ids, 'mode': 'async'})
-
+ 
             return result
         else:
-            logger.info("Celery no disponible - Ejecutando analisis SINCRONO con SSE")
-            print("=" * 60)
-            print("MODO: SINCRONO (SIN CELERY) - USANDO SSE")
-            print("=" * 60)
-
+            logger.info("Celery no disponible - Ejecutando análisis SÍNCRONO con SSE")
+ 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                request.session['analysis_path'] = path
+                request.session['analysis_path'] = str(project_path)
                 request.session['analysis_user_id'] = request.user.id
                 request.session['analysis_token'] = usu_token.token
                 request.session.save()
-
                 return JsonResponse({'mode': 'sync', 'use_sse': True})
-
+ 
             result = _analizar_sincrono(request, proyectos, usu_token)
             return result
-
+ 
     return render(request, 'main/importarProyecto.html')
 
 
