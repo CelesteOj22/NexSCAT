@@ -149,5 +149,16 @@ elif [ "${CONTAINER_TYPE}" = "flower" ]; then
 
 else
     echo "🌐 Iniciando Django..."
-    exec python manage.py runserver 0.0.0.0:8000
+    if [ "${SCAT_MODE}" = "production" ]; then
+        echo "   Modo producción → gunicorn"
+        exec gunicorn iscat.wsgi:application \
+            --bind 0.0.0.0:8000 \
+            --workers ${GUNICORN_WORKERS:-4} \
+            --timeout 300 \
+            --access-logfile - \
+            --error-logfile -
+    else
+        echo "   Modo desarrollo → runserver"
+        exec python manage.py runserver 0.0.0.0:8000
+    fi
 fi

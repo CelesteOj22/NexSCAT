@@ -1,0 +1,234 @@
+# docker-compose.cloud.yml
+# ============================================
+# Configuración para Hetzner CX42
+# 8 vCPU / 16 GB RAM / 160 GB NVMe
+# Análisis paralelo habilitado
+# ============================================
+name: nexscat
+
+services:
+
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  db:
+    image: postgres:15-alpine
+    container_name: nexscat_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es requerido}
+      POSTGRES_DB: ${DB_NAME:-nexscat_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No exponer puerto 5432 al exterior en producción
+
+  # ============================================
+  # Redis (para Celery)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: nexscat_redis
+    restart: unless-stopped
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No exponer puerto 6379 al exterior en producción
+
+  # ============================================
+  # SonarQube Server
+  # CX42 tiene 16 GB → podemos darle 4 GB a SonarQube
+  # ============================================
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: nexscat_sonarqube
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonarqube_db
+      SONAR_JDBC_USERNAME: ${DB_USER:-postgres}
+      SONAR_JDBC_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es requerido}
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_CE_JAVAOPTS: "-Xmx2048m -Xms512m"
+      SONAR_WEB_JAVAOPTS: "-Xmx2048m -Xms512m"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    # No exponer 9000 al exterior — solo acceso interno vía Django
+    networks:
+      - nexscat_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/api/system/status | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # ============================================
+  # Django Web Application
+  # ============================================
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: nexscat_web
+    restart: unless-stopped
+    init: true
+    user: "0:0"
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - proyectos_volume:/app/proyectos
+      - sm_results_volume:/opt/sm_results
+    environment:
+      # Base de datos
+      DB_NAME: ${DB_NAME:-nexscat_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es requerido}
+      DB_HOST: db
+      DB_PORT: 5432
+      # Django
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es requerido}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      DJANGO_SETTINGS_MODULE: iscat.settings
+      # SonarQube
+      SONARQUBE_URL: http://sonarqube:9000
+      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+      # Celery / Redis
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      # Modo análisis
+      ANALYSIS_MODE: parallel
+      USE_CELERY: "True"
+      MAX_PARALLEL_ANALYSIS: 4
+      CELERY_WORKERS: 4
+      ANALYSIS_TIMEOUT: "3600"
+      # Paths
+      PROYECTOS_DIR: /app/proyectos
+      JAVA11_HOME: /usr/lib/jvm/temurin-11-jdk-amd64
+      # Flags
+      IS_DOCKER: "True"
+      RUNNING_IN_DOCKER: "True"
+      CONTAINER_TYPE: web
+      SCAT_MODE: production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sonarqube:
+        condition: service_healthy
+    networks:
+      - nexscat_network
+
+  # ============================================
+  # Celery Worker
+  # ============================================
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: nexscat_celery
+    restart: unless-stopped
+    init: true
+    user: "0:0"
+    command: celery -A iscat worker -Q default,analysis -c 4 --loglevel=info
+    volumes:
+      - media_volume:/app/media
+      - proyectos_volume:/app/proyectos
+      - sm_results_volume:/opt/sm_results
+    environment:
+      DB_NAME: ${DB_NAME:-nexscat_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es requerido}
+      DB_HOST: db
+      DB_PORT: 5432
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es requerido}
+      DJANGO_SETTINGS_MODULE: iscat.settings
+      SONARQUBE_URL: http://sonarqube:9000
+      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ANALYSIS_MODE: parallel
+      USE_CELERY: "True"
+      CELERY_WORKERS: 4
+      ANALYSIS_TIMEOUT: "3600"
+      PROYECTOS_DIR: /app/proyectos
+      JAVA11_HOME: /usr/lib/jvm/temurin-11-jdk-amd64
+      IS_DOCKER: "True"
+      RUNNING_IN_DOCKER: "True"
+      CONTAINER_TYPE: celery
+      SCAT_MODE: production
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - nexscat_network
+
+  # ============================================
+  # Nginx — reverse proxy + archivos estáticos
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: nexscat_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - web
+    networks:
+      - nexscat_network
+
+# ============================================
+# Volúmenes persistentes
+# Todos en el mismo overlay filesystem de Docker
+# → SourceMeter no tiene cross-device link en Linux ✅
+# ============================================
+volumes:
+  postgres_data:
+    name: nexscat_postgres_data
+  sonarqube_data:
+    name: nexscat_sonarqube_data
+  sonarqube_logs:
+    name: nexscat_sonarqube_logs
+  sonarqube_extensions:
+    name: nexscat_sonarqube_extensions
+  static_volume:
+    name: nexscat_static
+  media_volume:
+    name: nexscat_media
+  proyectos_volume:
+    name: nexscat_proyectos
+  sm_results_volume:
+    name: nexscat_sm_results
+
+# ============================================
+# Red interna — SonarQube y DB no expuestos
+# ============================================
+networks:
+  nexscat_network:
+    name: nexscat_network
+    driver: bridge
