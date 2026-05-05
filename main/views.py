@@ -628,7 +628,16 @@ def analizar_proyecto_individual(request, project_id):
             token=usu_token.token
         )
 
-        request.session[f'task_{project.id}'] = task.id
+        request.session['analysis_tasks'] = [{
+            'project_name': project.name,
+            'task_id': task.id,
+            'project_id': project.id_project,
+            'mode': 'sequential'
+        }]
+        request.session['batch_started_at'] = time.time()
+        request.session['batch_project_names'] = [project.name]
+        request.session['batch_time_saved'] = False
+        request.session.modified = True
 
         messages.success(
             request,
@@ -823,6 +832,50 @@ def dashboardAnalisis(request):
 
     return render(request, 'main/dashboardAnalisisJerarquico.html', context)
 
+@login_required
+def analysis_status(request):
+    """
+    Lee la sesión y consulta Celery para devolver el estado actual del lote.
+    """
+    task_data = request.session.get('analysis_tasks', [])
+
+    if not task_data:
+        return JsonResponse({'active': False})
+
+    total = len(task_data)
+    completed = 0
+    current_project = None
+
+    for task_info in task_data:
+        task = AsyncResult(task_info['task_id'])
+        if task.ready():
+            completed += 1
+        elif current_project is None:
+            # El primer task no terminado es el "actual"
+            current_project = task_info.get('project_name', '')
+
+    all_done = completed == total
+
+    # Limpiar sesión cuando todo terminó
+    if all_done:
+        request.session.pop('analysis_tasks', None)
+        request.session.pop('batch_started_at', None)
+        request.session.pop('batch_project_names', None)
+        request.session.pop('batch_time_saved', None)
+        request.session.modified = True
+        return JsonResponse({'active': False})
+
+    # Si queda alguno activo, el current_project puede ser None
+    # (todos en PENDING todavía), usamos el primero del lote
+    if current_project is None:
+        current_project = task_data[0].get('project_name', '')
+
+    return JsonResponse({
+        'active': True,
+        'current_project': current_project,
+        'completed': completed,
+        'total': total,
+    })
 
 @login_required
 def ver_resultados(request, project_id):

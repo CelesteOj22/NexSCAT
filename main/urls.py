@@ -39,6 +39,7 @@ urlpatterns = [
     path('test-celery/', views.test_celery_view, name='test_celery'),
     path('analizar_sse/', views.analizar_sse, name='analizar_sse'),
     path('estadisticas-paralelo/', views.estadisticas_paralelo, name='estadisticas_paralelo'),
+    path('api/analysis-status/', views.analysis_status, name='analysis_status'),
 
 # Administración de usuarios
     path('users/', views.user_management, name='user_management'),
