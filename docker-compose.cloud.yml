@@ -94,7 +94,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - proyectos_volume:/app/proyectos
-      - sm_results_volume:/opt/sm_results
+      # sm_results queda en el overlay de la imagen — mismo device que /opt/tools
     environment:
       # Base de datos
       DB_NAME: ${DB_NAME:-nexscat_db}
