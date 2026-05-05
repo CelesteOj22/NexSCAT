@@ -22,53 +22,51 @@ def get_proyectos_dir() -> Path:
     return proyectos_dir
 
 
-def ingesta_zip(zip_file) -> tuple[bool, str, Path | None]:
+def ingesta_zip(zip_file) -> tuple[bool, str, list[Path] | None]:
     """
-    Recibe un archivo ZIP subido, lo descomprime y devuelve el path del proyecto.
-
-    Args:
-        zip_file: InMemoryUploadedFile de Django (request.FILES['zip_file'])
-
-    Returns:
-        (success, mensaje, project_path)
+    Recibe un ZIP con múltiples proyectos y devuelve la lista de subdirectorios.
     """
     try:
-        zip_name = Path(zip_file.name).stem  # nombre sin .zip
+        zip_name = Path(zip_file.name).stem
         destino = get_proyectos_dir() / zip_name
 
-        # Si ya existe, limpiar para re-analizar
         if destino.exists():
             shutil.rmtree(destino)
-
         destino.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Descomprimiendo {zip_file.name} en {destino}")
 
         with zipfile.ZipFile(zip_file, 'r') as zf:
-            # Seguridad: evitar path traversal
             for member in zf.namelist():
                 member_path = Path(member)
                 if member_path.is_absolute() or '..' in member_path.parts:
                     return False, f"El ZIP contiene rutas inseguras: {member}", None
-
             zf.extractall(destino)
 
-        # Si el ZIP descomprimió una sola carpeta raíz, usar esa como proyecto
+        # Obtener contenido de primer nivel
         contents = [p for p in destino.iterdir()]
-        if len(contents) == 1 and contents[0].is_dir():
-            project_path = contents[0]
-        else:
-            project_path = destino
 
-        logger.info(f"ZIP descomprimido exitosamente en {project_path}")
-        return True, "ZIP descomprimido exitosamente", project_path
+        # Caso A: ZIP con carpeta raíz (ej: proyectos/ → 8 subcarpetas)
+        if len(contents) == 1 and contents[0].is_dir():
+            raiz = contents[0]
+            proyectos = [p for p in raiz.iterdir() if p.is_dir()]
+            logger.info(f"Carpeta raíz detectada: '{raiz.name}', {len(proyectos)} proyectos encontrados")
+        else:
+            # Caso B: ZIP con carpetas directas (sin carpeta raíz)
+            proyectos = [p for p in contents if p.is_dir()]
+            logger.info(f"Sin carpeta raíz, {len(proyectos)} proyectos encontrados")
+
+        if not proyectos:
+            return False, "El ZIP no contiene ninguna carpeta de proyecto válida.", None
+
+        logger.info(f"Proyectos encontrados: {[p.name for p in proyectos]}")
+        return True, f"{len(proyectos)} proyecto(s) encontrados en el ZIP", proyectos
 
     except zipfile.BadZipFile:
         return False, "El archivo no es un ZIP válido", None
     except Exception as e:
         logger.error(f"Error procesando ZIP: {e}")
         return False, f"Error al procesar el ZIP: {str(e)}", None
-
 
 def ingesta_github(repo_url: str, branch: str = None) -> tuple[bool, str, Path | None]:
     """

@@ -224,7 +224,7 @@ def importarProyecto(request):
                 messages.error(request, 'No se recibió ningún archivo ZIP.')
                 return render(request, 'main/importarProyecto.html')
  
-            success, mensaje, project_path = ingesta_zip(zip_file)
+            success, mensaje, proyectos = ingesta_zip(zip_file)
  
         elif import_type == 'github':
             github_url = request.POST.get('github_url', '').strip()
@@ -257,9 +257,6 @@ def importarProyecto(request):
             return render(request, 'main/importarProyecto.html')
  
         # ── PIPELINE: igual que antes, pero con UN solo proyecto ───────
-        # project_path es el directorio del proyecto listo para analizar
-        proyectos = [project_path]
- 
         celery_disponible = is_celery_available()
  
         if celery_disponible:
@@ -275,7 +272,7 @@ def importarProyecto(request):
             logger.info("Celery no disponible - Ejecutando análisis SÍNCRONO con SSE")
  
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                request.session['analysis_path'] = str(project_path)
+                request.session['analysis_path'] = str(proyectos[0]) if proyectos else ''
                 request.session['analysis_user_id'] = request.user.id
                 request.session['analysis_token'] = usu_token.token
                 request.session.save()
