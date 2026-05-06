@@ -143,5 +143,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # ============================================
 # Entrypoint y comando por defecto
 # ============================================
+RUN find /app -name "*.pyc" -delete && find /app -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
+
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
