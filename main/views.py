@@ -396,7 +396,7 @@ def _analizar_asincrono(request, proyectos, usu_token):
         print(f"  Workers Celery: {settings.ANALYSIS_CONFIG.CELERY_WORKERS}")
         print(f"{'=' * 70}\n")
 
-        return redirect('main:monitorear_analisis')
+        return redirect('main:dashboardAnalisis')
     else:
         messages.error(request, "No se pudieron lanzar las tareas de análisis")
         return render(request, 'main/importarProyecto.html')

@@ -152,7 +152,6 @@ services:
     volumes:
       - media_volume:/app/media
       - proyectos_volume:/app/proyectos
-      - sm_results_volume:/opt/sm_results
     environment:
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
@@ -222,8 +221,6 @@ volumes:
     name: nexscat_media
   proyectos_volume:
     name: nexscat_proyectos
-  sm_results_volume:
-    name: nexscat_sm_results
 
 # ============================================
 # Red interna — SonarQube y DB no expuestos
