@@ -93,7 +93,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-      - proyectos_volume:/app/proyectos
+      - /opt/nexscat/proyectos:/app/proyectos
       # sm_results queda en el overlay de la imagen — mismo device que /opt/tools
     environment:
       # Base de datos
@@ -151,7 +151,8 @@ services:
     command: celery -A iscat worker -Q default,analysis -c 4 --loglevel=info
     volumes:
       - media_volume:/app/media
-      - proyectos_volume:/app/proyectos
+      - /opt/nexscat/proyectos:/app/proyectos   # bind mount en vez de named volume
+      - /opt/nexscat/sm_results:/opt/sm_results # bind mount en vez de overlay
     environment:
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
@@ -219,8 +220,6 @@ volumes:
     name: nexscat_static
   media_volume:
     name: nexscat_media
-  proyectos_volume:
-    name: nexscat_proyectos
 
 # ============================================
 # Red interna — SonarQube y DB no expuestos
