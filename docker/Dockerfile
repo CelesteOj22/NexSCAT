@@ -134,11 +134,6 @@ RUN chmod +x /app/docker/entrypoint.sh || echo "No se encontró entrypoint.sh"
 # ============================================
 EXPOSE 8000
 
-# ============================================
-# Healthcheck
-# ============================================
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
 
 # ============================================
 # Entrypoint y comando por defecto
