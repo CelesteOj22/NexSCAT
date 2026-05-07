@@ -379,7 +379,6 @@
             e.preventDefault();
             const formData = new FormData(this);
             const modal = new bootstrap.Modal(document.getElementById('progressModal'));
-            modal.show();
 
             fetch(this.action, {
                 method: 'POST',
@@ -397,6 +396,7 @@
                     modal.hide();
                     window.location.href = "{% url 'main:dashboardAnalisis' %}";
                 } else if (data.mode === 'sync' && data.use_sse) {
+                    modal.show();
                     monitorearConSSE();
                 } else if (data.error) {
                     modal.hide();
