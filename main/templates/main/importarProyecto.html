@@ -394,7 +394,8 @@
             })
             .then(data => {
                 if (data.mode === 'async' && data.task_ids) {
-                    monitorearTareasCelery(data.task_ids);
+                    modal.hide();
+                    window.location.href = "{% url 'main:dashboardAnalisis' %}";
                 } else if (data.mode === 'sync' && data.use_sse) {
                     monitorearConSSE();
                 } else if (data.error) {
@@ -461,57 +462,6 @@
             bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
             showMessage('error', 'Error en la conexión con el servidor. Por favor, inténtelo nuevamente.');
         };
-    }
-
-    function monitorearTareasCelery(taskIds) {
-        const progressBar = document.getElementById('progressBar');
-        const steps = {};
-        for (let i = 0; i <= 5; i++) {
-            steps[i] = document.getElementById('step' + i);
-        }
-        let lastStep = 0;
-
-        const interval = setInterval(() => {
-            const taskId = taskIds[0].task_id;
-            fetch(`/verificar_tarea/${taskId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    const progress = data.progress || 0;
-                    progressBar.style.width = progress + '%';
-                    progressBar.textContent = Math.round(progress) + '%';
-                    const currentStep = data.current_step || 0;
-                    if (currentStep !== lastStep) {
-                        lastStep = currentStep;
-                        Object.values(steps).forEach(step => { if(step) step.classList.remove('active'); });
-                        for (let i = 0; i < currentStep; i++) {
-                            if (steps[i] && !steps[i].classList.contains('completed'))
-                                steps[i].classList.add('completed');
-                        }
-                        if (currentStep > 0 && currentStep <= 5 && steps[currentStep])
-                            steps[currentStep].classList.add('active');
-                    }
-                    if (data.status && currentStep > 0 && steps[currentStep]) {
-                        const stepText = steps[currentStep].querySelector('span');
-                        if (stepText) stepText.textContent = data.status;
-                    }
-                    if (data.ready) {
-                        clearInterval(interval);
-                        if (data.successful) {
-                            Object.values(steps).forEach(step => {
-                                if(step) { step.classList.remove('active'); step.classList.add('completed'); }
-                            });
-                            progressBar.style.width = '100%';
-                            progressBar.textContent = '100%';
-                            showMessage('success', '¡Análisis completado exitosamente!');
-                            setTimeout(() => { window.location.href = "{% url 'main:dashboardAnalisis' %}"; }, 2000);
-                        } else {
-                            bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
-                            showMessage('error', data.error || 'Error en el análisis');
-                        }
-                    }
-                })
-                .catch(error => console.error('Error verificando tarea:', error));
-        }, 1000);
     }
 </script>
 {% endblock %}
