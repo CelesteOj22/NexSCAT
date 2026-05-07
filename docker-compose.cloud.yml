@@ -152,7 +152,6 @@ services:
     volumes:
       - media_volume:/app/media
       - /opt/nexscat/proyectos:/app/proyectos   # bind mount en vez de named volume
-      - /opt/nexscat/sm_results:/opt/sm_results # bind mount en vez de overlay
     environment:
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
