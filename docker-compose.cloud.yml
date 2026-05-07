@@ -95,6 +95,7 @@ services:
       - media_volume:/app/media
       - /opt/nexscat/proyectos:/app/proyectos
       - /opt/nexscat/sm_results:/opt/sm_results
+      - /opt/nexscat/tools:/opt/tools
       # sm_results queda en el overlay de la imagen — mismo device que /opt/tools
     environment:
       # Base de datos
@@ -154,6 +155,7 @@ services:
       - media_volume:/app/media
       - /opt/nexscat/proyectos:/app/proyectos   # bind mount en vez de named volume
       - /opt/nexscat/sm_results:/opt/sm_results
+      - /opt/nexscat/tools:/opt/tools
     environment:
       DB_NAME: ${DB_NAME:-nexscat_db}
       DB_USER: ${DB_USER:-postgres}
