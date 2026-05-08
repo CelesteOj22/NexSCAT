@@ -569,14 +569,12 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-lg-2 col-md-4 filter-group">
-                    <label>Nivel visible</label>
-                    <div class="filter-input" style="background:#f8f9fa; cursor:default;">
-                        <span id="currentLevelIndicator">
-                            <i class="bi bi-layers"></i> Expandí un proyecto para ver más
-                        </span>
-                    </div>
-                </div>
+                <select id="filterLevel" class="form-select filter-input" onchange="filterByLevel()">
+                    <option value="todos">Todos</option>
+                    <option value="proyecto">Proyecto</option>
+                    <option value="componente">Componente</option>
+                    <option value="clase">Clase</option>
+                </select>
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label>Acciones</label>
                     <div class="d-flex gap-2">
@@ -785,6 +783,8 @@
             const response = await fetch(url);
             const data = await response.json();
             loadingRow.remove();
+            console.log('Data recibida:', data);
+            console.log('Llamando renderFn con parentId:', nodeId);
             renderFn(nodeId, data[dataKey], row);
 
         } catch (err) {
@@ -807,7 +807,7 @@
 
         components.forEach(comp => {
             const compId = `component_${comp.id}`;
-            const hasContent = comp.measures.length > 0;
+            const hasContent = true; // siempre mostrar expand, las clases se cargan on-demand
 
             // Fila del componente
             const compRow = document.createElement('tr');
@@ -954,17 +954,42 @@
         }
     }
 
+    function filterByLevel() {
+        const level = document.getElementById('filterLevel')?.value;
+        const rows = document.querySelectorAll('#tableBody tr');
+        
+        rows.forEach(row => {
+            const type = row.getAttribute('data-type');
+            if (!type) return;
+        
+            switch(level) {
+                case 'todos':
+                    row.style.display = (row.classList.contains('visible') || type === 'project') ? '' : 'none';
+                    break;
+                case 'proyecto':
+                    row.style.display = (type === 'project' || (type === 'measure' && row.classList.contains('hierarchy-level-1'))) ? '' : 'none';
+                    break;
+                case 'componente':
+                    row.style.display = (type === 'project' || type === 'component' || (type === 'measure' && row.classList.contains('hierarchy-level-2'))) ? '' : 'none';
+                    break;
+                case 'clase':
+                    row.style.display = (type === 'project' || type === 'component' || type === 'class' || (type === 'measure' && row.classList.contains('hierarchy-level-3'))) ? '' : 'none';
+                    break;
+            }
+        });
+    }
+
     function resetFilters() {
         const filterSearch = document.getElementById('filterSearch');
         const filterProject = document.getElementById('filterProject');
         const filterMetric = document.getElementById('filterMetric');
         const filterTool = document.getElementById('filterTool');
-        
+
         if (filterSearch) filterSearch.value = '';
         if (filterProject) filterProject.value = '';
         if (filterMetric) filterMetric.value = '';
         if (filterTool) filterTool.value = '';
-        
+
         filterTable();
     }
 
