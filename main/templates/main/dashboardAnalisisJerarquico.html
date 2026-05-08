@@ -569,12 +569,15 @@
                         {% endfor %}
                     </select>
                 </div>
-                <select id="filterLevel" class="form-select filter-input" onchange="filterByLevel()">
-                    <option value="todos">Todos</option>
-                    <option value="proyecto">Proyecto</option>
-                    <option value="componente">Componente</option>
-                    <option value="clase">Clase</option>
-                </select>
+                <div class="col-lg-2 col-md-4 filter-group">
+                    <label for="filterLevel">Nivel</label>
+                    <select id="filterLevel" class="form-select filter-input" onchange="filterByLevel()">
+                        <option value="todos">Todos</option>
+                        <option value="proyecto">Proyecto</option>
+                        <option value="componente">Componente</option>
+                        <option value="clase">Clase</option>
+                    </select>
+                </div>
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label>Acciones</label>
                     <div class="d-flex gap-2">
@@ -967,12 +970,15 @@
                     row.style.display = (row.classList.contains('visible') || type === 'project') ? '' : 'none';
                     break;
                 case 'proyecto':
+                    // proyectos + solo métricas de nivel 1
                     row.style.display = (type === 'project' || (type === 'measure' && row.classList.contains('hierarchy-level-1'))) ? '' : 'none';
                     break;
                 case 'componente':
+                    // proyectos + componentes + solo métricas de nivel 2
                     row.style.display = (type === 'project' || type === 'component' || (type === 'measure' && row.classList.contains('hierarchy-level-2'))) ? '' : 'none';
                     break;
                 case 'clase':
+                    // proyectos + componentes + clases + solo métricas de nivel 3
                     row.style.display = (type === 'project' || type === 'component' || type === 'class' || (type === 'measure' && row.classList.contains('hierarchy-level-3'))) ? '' : 'none';
                     break;
             }
