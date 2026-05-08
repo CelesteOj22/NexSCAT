@@ -511,8 +511,16 @@
                 <div class="number">{{ total_projects }}</div>
             </div>
             <div class="stat-card">
-                <div class="label">Total de Métricas a Nivel de {{selected_level}}</div>
-                <div class="number">{{ total_measures }}</div>
+            <div class="label">Métricas de Proyecto</div>
+                <div class="number">{{ total_project_measures }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Métricas de Componente</div>
+                <div class="number">{{ total_component_measures }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Métricas de Clase</div>
+                <div class="number">{{ total_class_measures }}</div>
             </div>
             <div class="stat-card">
                 <div class="label">Último Análisis</div>
@@ -793,6 +801,10 @@
         const existingChildren = document.querySelectorAll(`[data-parent="${parentId}"]`);
         existingChildren.forEach(r => r.classList.add('visible'));
 
+        if (existingChildren.length > 0) {
+            lastInserted = existingChildren[existingChildren.length - 1];
+        }
+
         components.forEach(comp => {
             const compId = `component_${comp.id}`;
             const hasContent = comp.measures.length > 0;
@@ -802,7 +814,7 @@
             compRow.className = 'child-row component-row hierarchy-level-1 visible';
             compRow.setAttribute('data-id', compId);
             compRow.setAttribute('data-parent', parentId);
-            compRow.setAttribute('data-project', afterRow.getAttribute('data-project'));
+            compRow.setAttribute('data-project', lastInserted.getAttribute('data-project'));
             compRow.setAttribute('data-type', 'component');
             compRow.innerHTML = `
                 <td class="hierarchy-level-1">
@@ -815,7 +827,7 @@
                 <td><span class="badge-level componente">COMPONENTE</span></td>
                 <td colspan="4"></td>`;
 
-            afterRow.insertAdjacentElement('afterend', compRow);
+            lastInserted.insertAdjacentElement('afterend', compRow);
             lastInserted = compRow;
 
             // Métricas del componente (ocultas por defecto)
@@ -940,6 +952,20 @@
                 row.style.display = 'none';
             }
         }
+    }
+
+    function resetFilters() {
+        const filterSearch = document.getElementById('filterSearch');
+        const filterProject = document.getElementById('filterProject');
+        const filterMetric = document.getElementById('filterMetric');
+        const filterTool = document.getElementById('filterTool');
+        
+        if (filterSearch) filterSearch.value = '';
+        if (filterProject) filterProject.value = '';
+        if (filterMetric) filterMetric.value = '';
+        if (filterTool) filterTool.value = '';
+        
+        filterTable();
     }
 
     // ============================================
