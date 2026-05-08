@@ -562,13 +562,12 @@
                     </select>
                 </div>
                 <div class="col-lg-2 col-md-4 filter-group">
-                    <label for="filterLevel">Nivel</label>
-                    <select id="filterLevel" class="form-select filter-input" onchange="changeLevel()">
-                        <option value="Proyecto" {% if selected_level == 'Proyecto' %}selected{% endif %}>Proyecto</option>
-                        <option value="Componente" {% if selected_level == 'Componente' %}selected{% endif %}>Componente</option>
-                        <option value="Clase" {% if selected_level == 'Clase' %}selected{% endif %}>Clase</option>
-                        <option value="Todos" {% if selected_level == 'Todos' %}selected{% endif %}>Todos ⚠️</option>
-                    </select>
+                    <label>Nivel visible</label>
+                    <div class="filter-input" style="background:#f8f9fa; cursor:default;">
+                        <span id="currentLevelIndicator">
+                            <i class="bi bi-layers"></i> Expandí un proyecto para ver más
+                        </span>
+                    </div>
                 </div>
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label>Acciones</label>
@@ -592,6 +591,18 @@
                                 <i class="bi bi-file-earmark-arrow-down"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <div class="px-3 py-2">
+                                        <label class="form-label small fw-bold mb-1">Nivel a exportar</label>
+                                        <select id="exportLevel" class="form-select form-select-sm">
+                                            <option value="Todos">Todos los niveles</option>
+                                            <option value="Proyecto">Solo Proyecto</option>
+                                            <option value="Componente">Proyecto + Componente</option>
+                                            <option value="Clase">Hasta Clase</option>
+                                        </select>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider m-0"></li>
                                 <li><a class="dropdown-item" href="#" onclick="exportToCSV(); return false;">
                                     <i class="bi bi-filetype-csv"></i> Exportar como CSV
                                 </a></li>
@@ -896,31 +907,6 @@
     }
 
     // ============================================
-    // CAMBIO DE NIVEL
-    // ============================================
-
-    function changeLevel() {
-        const selectElement = document.getElementById('filterLevel');
-        if (!selectElement) return;
-
-        const level = selectElement.value;
-
-        if (level === 'Todos') {
-            const confirmed = confirm('Cargar todas las métricas puede tardar varios segundos. ¿Deseas continuar?');
-            if (!confirmed) {
-                selectElement.value = '{{ selected_level }}';
-                return;
-            }
-        }
-
-        showLoading('Cambiando nivel de análisis...', 'Cargando ' + level.toLowerCase());
-
-        setTimeout(() => {
-            window.location.href = '?level=' + encodeURIComponent(level);
-        }, 100);
-    }
-
-    // ============================================
     // FILTRADO
     // ============================================
 
@@ -976,7 +962,7 @@
         showLoading('Exportando a CSV...', 'Generando estructura jerárquica');
 
         try {
-            const level = document.getElementById('filterLevel')?.value || 'Todos';
+            const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
             const result = await response.json();
             const data = result.data;
@@ -1061,7 +1047,7 @@
         showLoading('Exportando a JSON...', 'Generando estructura jerárquica');
 
         try {
-            const level = document.getElementById('filterLevel')?.value || 'Todos';
+            const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
             const result = await response.json();
 
@@ -1080,7 +1066,7 @@
         showLoading('Exportando a XML...', 'Generando estructura jerárquica');
 
         try {
-            const level = document.getElementById('filterLevel')?.value || 'Todos';
+            const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
             const result = await response.json();
             const data = result.data;
