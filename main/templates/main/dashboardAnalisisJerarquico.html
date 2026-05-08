@@ -900,6 +900,9 @@
                 lastInserted.insertAdjacentElement('afterend', mRow);
                 lastInserted = mRow;
             });
+
+            // Marcar como ya cargado para que el click solo haga toggle
+            if (hasContent) loadedNodes.add(clsId);
         });
     }
 
@@ -960,11 +963,11 @@
     function filterByLevel() {
         const level = document.getElementById('filterLevel')?.value;
         const rows = document.querySelectorAll('#tableBody tr');
-        
+
         rows.forEach(row => {
             const type = row.getAttribute('data-type');
             if (!type) return;
-        
+
             switch(level) {
                 case 'todos':
                     row.style.display = (row.classList.contains('visible') || type === 'project') ? '' : 'none';
