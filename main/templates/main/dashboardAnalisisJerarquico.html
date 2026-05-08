@@ -630,7 +630,7 @@
                                 data-project="{{ project_node.project_name }}"
                                 data-type="project">
                                 <td>
-                                    <span class="expand-icon" onclick="toggleNode('{{ project_node.id }}')">
+                                    <span class="expand-icon" onclick="toggleNode('{{ project_node.id }}', 'project', {{ project_node.project_id }})">
                                         <i class="bi bi-caret-right-fill"></i>
                                     </span>
                                     <strong class="project-name">{{ project_node.project_name }}</strong>
@@ -665,105 +665,16 @@
                                 <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
                             </tr>
                             {% endfor %}
-
-                            <!-- COMPONENTS -->
-                            {% for component_node in project_node.components %}
-                            <tr class="child-row component-row hierarchy-level-1"
-                                data-id="{{ component_node.id }}"
-                                data-parent="{{ project_node.id }}"
-                                data-project="{{ project_node.project_name }}"
-                                data-type="component">
-                                <td class="hierarchy-level-1">
-                                    {% if component_node.measures or component_node.classes %}
-                                    <span class="expand-icon" onclick="toggleNode('{{ component_node.id }}')">
-                                        <i class="bi bi-caret-right-fill"></i>
-                                    </span>
-                                    {% endif %}
-                                    <span class="component-name" data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            data-bs-html="true"
-                                            title="<strong>Path completo:</strong><br>{{ component_node.component_path }}">
-                                        {{ component_node.component_display_name }}
-                                    </span>
-                                    <small class="text-muted d-block" style="padding-left: 28px;">
-                                        {{ component_node.qualifier }}
-                                    </small>
-                                </td>
-                                <td><span class="badge-level componente">COMPONENTE</span></td>
-                                <td colspan="4"></td>
-                            </tr>
-
-                            <!-- COMPONENT MEASURES -->
-                            {% for measure in component_node.measures %}
-                            <tr class="child-row measure-row hierarchy-level-2"
-                                data-parent="{{ component_node.id }}"
-                                data-project="{{ project_node.project_name }}"
-                                data-metric="{{ measure.metric_name }}"
-                                data-tool="{{ measure.tool }}"
-                                data-type="measure">
-                                <td class="hierarchy-level-2">
-                                    <span class="measure-name">{{ measure.metric_name }}</span>
-                                </td>
-                                <td><span class="badge-level componente">MÉTRICA</span></td>
-                                <td><small>{{ measure.domain }}</small></td>
-                                <td><small>{{ measure.tool }}</small></td>
-                                <td class="measure-value">{{ measure.value }}</td>
-                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
-                            </tr>
-                            {% endfor %}
-
-                            <!-- CLASSES -->
-                            {% for class_node in component_node.classes %}
-                            <tr class="child-row class-row hierarchy-level-2"
-                                data-id="{{ class_node.id }}"
-                                data-parent="{{ component_node.id }}"
-                                data-project="{{ project_node.project_name }}"
-                                data-type="class">
-                                <td class="hierarchy-level-2">
-                                    {% if class_node.measures %}
-                                    <span class="expand-icon" onclick="toggleNode('{{ class_node.id }}')">
-                                        <i class="bi bi-caret-right-fill"></i>
-                                    </span>
-                                    {% endif %}
-                                    <span class="class-name">{{ class_node.class_name }}</span>
-                                </td>
-                                <td><span class="badge-level clase">CLASE</span></td>
-                                <td colspan="4"></td>
-                            </tr>
-
-                            <!-- CLASS MEASURES -->
-                            {% for measure in class_node.measures %}
-                            <tr class="child-row measure-row hierarchy-level-3"
-                                data-parent="{{ class_node.id }}"
-                                data-project="{{ project_node.project_name }}"
-                                data-metric="{{ measure.metric_name }}"
-                                data-tool="{{ measure.tool }}"
-                                data-type="measure">
-                                <td class="hierarchy-level-3">
-                                    <span class="measure-name">{{ measure.metric_name }}</span>
-                                </td>
-                                <td><span class="badge-level clase">MÉTRICA</span></td>
-                                <td><small>{{ measure.domain }}</small></td>
-                                <td><small>{{ measure.tool }}</small></td>
-                                <td class="measure-value">{{ measure.value }}</td>
-                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
-                            </tr>
-                            {% endfor %}
-                            {% endfor %}
-                            {% endfor %}
                         {% empty %}
-                        <tr>
-                            <td colspan="6">
-                                <div class="no-results">
-                                    <i class="bi bi-inbox"></i>
-                                    <h4>No hay métricas disponibles</h4>
-                                    <p>Importa proyectos para ver sus métricas aquí</p>
-                                    <a href="{% url 'main:importarProyecto' %}" class="btn btn-primary mt-3">
-                                        <i class="bi bi-plus-circle"></i> Importar Proyectos
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="no-results">
+                                            <i class="bi bi-inbox"></i>
+                                            <h4>No hay métricas disponibles</h4>
+                                            <p>Importa proyectos para ver sus métricas aquí</p>
+                                        </div>
+                                    </td>
+                                </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -807,21 +718,163 @@
     }
 
     // ============================================
-    // EXPAND/COLLAPSE JERÁRQUICO
+    // EXPAND/COLLAPSE CON LAZY LOADING
     // ============================================
 
-    function toggleNode(nodeId) {
-        const childRows = document.querySelectorAll(`[data-parent="${nodeId}"]`);
-        const expandIcon = document.querySelector(`[data-id="${nodeId}"] .expand-icon i`);
+    const loadedNodes = new Set(); // para no cargar dos veces
 
-        childRows.forEach(row => {
-            row.classList.toggle('visible');
-        });
+    async function toggleNode(nodeId, nodeType, entityId) {
+        const row = document.querySelector(`[data-id="${nodeId}"]`);
+        const expandIcon = row?.querySelector('.expand-icon');
+        const isExpanded = expandIcon?.classList.contains('expanded');
 
-        if (expandIcon) {
-            const icon = expandIcon.closest('.expand-icon');
-            icon.classList.toggle('expanded');
+        // Si ya está expandido, solo colapsar/mostrar
+        if (loadedNodes.has(nodeId)) {
+            const childRows = document.querySelectorAll(`[data-parent="${nodeId}"]`);
+            childRows.forEach(r => r.classList.toggle('visible'));
+            expandIcon?.classList.toggle('expanded');
+            return;
         }
+
+        // Marcar como cargado
+        loadedNodes.add(nodeId);
+        expandIcon?.classList.add('expanded');
+
+        // Insertar fila de loading
+        const loadingRow = document.createElement('tr');
+        loadingRow.className = 'child-row visible';
+        loadingRow.setAttribute('data-parent', nodeId);
+        loadingRow.innerHTML = `<td colspan="6" class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <small class="text-muted">Cargando...</small>
+        </td>`;
+        row.insertAdjacentElement('afterend', loadingRow);
+
+        try {
+            let url, dataKey, renderFn;
+
+            if (nodeType === 'project') {
+                url = `/api/project/${entityId}/components/`;
+                dataKey = 'components';
+                renderFn = renderComponents;
+            } else if (nodeType === 'component') {
+                url = `/api/component/${entityId}/classes/`;
+                dataKey = 'classes';
+                renderFn = renderClasses;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+            loadingRow.remove();
+            renderFn(nodeId, data[dataKey], row);
+
+        } catch (err) {
+            loadingRow.remove();
+            loadedNodes.delete(nodeId); // permitir reintentar
+            console.error('Error cargando datos:', err);
+        }
+    }
+
+    function renderComponents(parentId, components, afterRow) {
+        let lastInserted = afterRow;
+
+        // Primero insertar las filas de métricas del proyecto que ya están renderizadas
+        const existingChildren = document.querySelectorAll(`[data-parent="${parentId}"]`);
+        existingChildren.forEach(r => r.classList.add('visible'));
+
+        components.forEach(comp => {
+            const compId = `component_${comp.id}`;
+            const hasContent = comp.measures.length > 0;
+
+            // Fila del componente
+            const compRow = document.createElement('tr');
+            compRow.className = 'child-row component-row hierarchy-level-1 visible';
+            compRow.setAttribute('data-id', compId);
+            compRow.setAttribute('data-parent', parentId);
+            compRow.setAttribute('data-project', afterRow.getAttribute('data-project'));
+            compRow.setAttribute('data-type', 'component');
+            compRow.innerHTML = `
+                <td class="hierarchy-level-1">
+                    ${hasContent ? `<span class="expand-icon" onclick="toggleNode('${compId}', 'component', ${comp.id})">
+                        <i class="bi bi-caret-right-fill"></i>
+                    </span>` : ''}
+                    <span class="component-name" title="${comp.path}">${comp.display_name}</span>
+                    <small class="text-muted d-block" style="padding-left:28px">${comp.qualifier}</small>
+                </td>
+                <td><span class="badge-level componente">COMPONENTE</span></td>
+                <td colspan="4"></td>`;
+
+            afterRow.insertAdjacentElement('afterend', compRow);
+            lastInserted = compRow;
+
+            // Métricas del componente (ocultas por defecto)
+            comp.measures.forEach(measure => {
+                const mRow = document.createElement('tr');
+                mRow.className = 'child-row measure-row hierarchy-level-2';
+                mRow.setAttribute('data-parent', compId);
+                mRow.setAttribute('data-metric', measure.name);
+                mRow.setAttribute('data-tool', measure.tool);
+                mRow.setAttribute('data-type', 'measure');
+                mRow.innerHTML = `
+                    <td class="hierarchy-level-2"><span class="measure-name">${measure.name}</span></td>
+                    <td><span class="badge-level componente">MÉTRICA</span></td>
+                    <td><small>${measure.domain}</small></td>
+                    <td><small>${measure.tool}</small></td>
+                    <td class="measure-value">${measure.value}</td>
+                    <td><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
+                lastInserted.insertAdjacentElement('afterend', mRow);
+                lastInserted = mRow;
+            });
+        });
+    }
+
+    function renderClasses(parentId, classes, afterRow) {
+        let lastInserted = afterRow;
+
+        // Mostrar métricas del componente
+        const existingChildren = document.querySelectorAll(`[data-parent="${parentId}"]`);
+        existingChildren.forEach(r => r.classList.add('visible'));
+
+        classes.forEach(cls => {
+            const clsId = `class_${cls.id}`;
+            const hasContent = cls.measures.length > 0;
+
+            const clsRow = document.createElement('tr');
+            clsRow.className = 'child-row class-row hierarchy-level-2 visible';
+            clsRow.setAttribute('data-id', clsId);
+            clsRow.setAttribute('data-parent', parentId);
+            clsRow.setAttribute('data-type', 'class');
+            clsRow.innerHTML = `
+                <td class="hierarchy-level-2">
+                    ${hasContent ? `<span class="expand-icon" onclick="toggleNode('${clsId}', 'class_measures', ${cls.id})">
+                        <i class="bi bi-caret-right-fill"></i>
+                    </span>` : ''}
+                    <span class="class-name">${cls.name}</span>
+                </td>
+                <td><span class="badge-level clase">CLASE</span></td>
+                <td colspan="4"></td>`;
+
+            lastInserted.insertAdjacentElement('afterend', clsRow);
+            lastInserted = clsRow;
+
+            cls.measures.forEach(measure => {
+                const mRow = document.createElement('tr');
+                mRow.className = 'child-row measure-row hierarchy-level-3';
+                mRow.setAttribute('data-parent', clsId);
+                mRow.setAttribute('data-metric', measure.name);
+                mRow.setAttribute('data-tool', measure.tool);
+                mRow.setAttribute('data-type', 'measure');
+                mRow.innerHTML = `
+                    <td class="hierarchy-level-3"><span class="measure-name">${measure.name}</span></td>
+                    <td><span class="badge-level clase">MÉTRICA</span></td>
+                    <td><small>${measure.domain}</small></td>
+                    <td><small>${measure.tool}</small></td>
+                    <td class="measure-value">${measure.value}</td>
+                    <td><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
+                lastInserted.insertAdjacentElement('afterend', mRow);
+                lastInserted = mRow;
+            });
+        });
     }
 
     function expandAll() {

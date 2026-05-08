@@ -722,74 +722,6 @@ def dashboardAnalisis(request):
                     'domain': pm.id_metric.domain,
                 })
 
-        if selected_level in ['Componente', 'Clase', 'Todos']:
-            components = Component.objects.filter(
-                id_project=project
-            ).order_by('path')
-
-            for component in components:
-                component_display_name = component.path.split('/')[-1] if component.path else component.path
-                component_node = {
-                    'type': 'component',
-                    'id': f'component_{component.id_component}',
-                    'component_id': component.id_component,
-                    'component_name': component.path,
-                    'component_path': component.path,
-                    'component_display_name': component_display_name,
-                    'qualifier': component.qualifier,
-                    'measures': [],
-                    'classes': []
-                }
-
-                if selected_level in ['Componente', 'Todos']:
-                    comp_measures = ComponentMeasure.objects.filter(
-                        id_component=component
-                    ).select_related('id_metric').order_by('id_metric__name')
-
-                    for cm in comp_measures:
-                        component_node['measures'].append({
-                            'level': 'Componente',
-                            'metric_name': cm.id_metric.name,
-                            'metric_key': cm.id_metric.key,
-                            'tool': cm.id_metric.tool,
-                            'value': cm.value,
-                            'description': cm.id_metric.description or '',
-                            'domain': cm.id_metric.domain,
-                        })
-
-                if selected_level in ['Clase', 'Todos']:
-                    classes = Class.objects.filter(
-                        id_component=component
-                    ).order_by('name')
-
-                    for class_obj in classes:
-                        class_node = {
-                            'type': 'class',
-                            'id': f'class_{class_obj.id_class}',
-                            'class_id': class_obj.id_class,
-                            'class_name': class_obj.name,
-                            'measures': []
-                        }
-
-                        class_measures = ClassMeasure.objects.filter(
-                            id_class=class_obj
-                        ).select_related('id_metric').order_by('id_metric__name')
-
-                        for clm in class_measures:
-                            class_node['measures'].append({
-                                'level': 'Clase',
-                                'metric_name': clm.id_metric.name,
-                                'metric_key': clm.id_metric.key,
-                                'tool': clm.id_metric.tool,
-                                'value': clm.value,
-                                'description': clm.id_metric.description or '',
-                                'domain': clm.id_metric.domain,
-                            })
-
-                        component_node['classes'].append(class_node)
-
-                project_node['components'].append(component_node)
-
         hierarchical_data.append(project_node)
 
     total_projects = projects.count()
@@ -828,6 +760,75 @@ def dashboardAnalisis(request):
     }
 
     return render(request, 'main/dashboardAnalisisJerarquico.html', context)
+
+@login_required
+def project_components(request, project_id):
+    """
+    Devuelve componentes + métricas de un proyecto (lazy loading)
+    """
+    project = get_object_or_404(Project, id_project=project_id)
+    
+    components = Component.objects.filter(
+        id_project=project
+    ).order_by('path')
+
+    data = []
+    for component in components:
+        component_display_name = component.path.split('/')[-1] if component.path else component.path
+        
+        measures = ComponentMeasure.objects.filter(
+            id_component=component
+        ).select_related('id_metric').order_by('id_metric__name')
+
+        data.append({
+            'id': component.id_component,
+            'path': component.path,
+            'display_name': component_display_name,
+            'qualifier': component.qualifier,
+            'measures': [{
+                'name': m.id_metric.name,
+                'key': m.id_metric.key,
+                'tool': m.id_metric.tool,
+                'value': str(m.value or ''),
+                'domain': m.id_metric.domain or '',
+                'description': m.id_metric.description or '',
+            } for m in measures]
+        })
+
+    return JsonResponse({'components': data})
+
+
+@login_required
+def component_classes(request, component_id):
+    """
+    Devuelve clases + métricas de un componente (lazy loading)
+    """
+    component = get_object_or_404(Component, id_component=component_id)
+
+    classes = Class.objects.filter(
+        id_component=component
+    ).order_by('name')
+
+    data = []
+    for class_obj in classes:
+        measures = ClassMeasure.objects.filter(
+            id_class=class_obj
+        ).select_related('id_metric').order_by('id_metric__name')
+
+        data.append({
+            'id': class_obj.id_class,
+            'name': class_obj.name,
+            'measures': [{
+                'name': m.id_metric.name,
+                'key': m.id_metric.key,
+                'tool': m.id_metric.tool,
+                'value': str(m.value or ''),
+                'domain': m.id_metric.domain or '',
+                'description': m.id_metric.description or '',
+            } for m in measures]
+        })
+
+    return JsonResponse({'classes': data})
 
 @login_required
 def analysis_status(request):

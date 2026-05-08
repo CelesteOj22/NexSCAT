@@ -30,6 +30,8 @@ urlpatterns = [
     path('proyecto/<int:project_id>/resultados/', views.ver_resultados, name='verResultados'),
     path('dashboardAnalisis/', views.dashboardAnalisis, name='dashboardAnalisis'),
     path('estado/', views.estado_herramientas, name='estado_herramientas'),
+    path('api/project/<int:project_id>/components/', views.project_components, name='project_components'),
+    path('api/component/<int:component_id>/classes/', views.component_classes, name='component_classes'),
     # NUEVAS URLs para Celery
     path('verificar_tarea/<str:task_id>/', views.verificar_tarea, name='verificar_tarea'),
     path('monitorear-analisis/', views.monitorear_analisis, name='monitorear_analisis'),
