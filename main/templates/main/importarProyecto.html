@@ -377,8 +377,11 @@
     function handleFormSubmit(form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando análisis...';
+
             const formData = new FormData(this);
-            const modal = new bootstrap.Modal(document.getElementById('progressModal'));
 
             fetch(this.action, {
                 method: 'POST',
@@ -392,76 +395,25 @@
                 return response.json();
             })
             .then(data => {
-                if (data.mode === 'async' && data.task_ids) {
-                    modal.hide();
-                    window.location.href = "{% url 'main:dashboardAnalisis' %}";
-                } else if (data.mode === 'sync' && data.use_sse) {
-                    modal.show();
-                    monitorearConSSE();
-                } else if (data.error) {
-                    modal.hide();
+                if (data.error) {
                     showMessage('error', data.error);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
+                } else {
+                    // Tanto async como sync → redirigir. El chip flotante se encarga del monitoreo.
+                    window.location.href = "{% url 'main:dashboardAnalisis' %}";
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
                 showMessage('error', error.message || 'Error al enviar el formulario');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
             });
         });
     }
 
     handleFormSubmit(document.getElementById('importFormZip'));
-    handleFormSubmit(document.getElementById('importFormGithub'));
-
-    // ========================================
-    // SSE y Celery (igual que antes)
-    // ========================================
-    function monitorearConSSE() {
-        const progressBar = document.getElementById('progressBar');
-        const steps = {};
-        for (let i = 0; i <= 5; i++) {
-            steps[i] = document.getElementById('step' + i);
-        }
-        let lastStep = 0;
-        const eventSource = new EventSource('/analizar_sse/');
-
-        eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.type === 'progress') {
-                progressBar.style.width = data.percent + '%';
-                progressBar.textContent = data.percent + '%';
-                const currentStep = data.step;
-                if (currentStep !== lastStep) {
-                    for (let i = 0; i < currentStep; i++) {
-                        if (steps[i]) { steps[i].classList.remove('active'); steps[i].classList.add('completed'); }
-                    }
-                    if (steps[currentStep]) steps[currentStep].classList.add('active');
-                    lastStep = currentStep;
-                }
-                if (steps[currentStep]) {
-                    const stepText = steps[currentStep].querySelector('span');
-                    if (stepText) stepText.textContent = data.message;
-                }
-            } else if (data.type === 'complete') {
-                eventSource.close();
-                Object.values(steps).forEach(step => { if(step) { step.classList.remove('active'); step.classList.add('completed'); } });
-                progressBar.style.width = '100%';
-                progressBar.textContent = '100%';
-                showMessage('success', '¡Análisis completado exitosamente!');
-                setTimeout(() => { window.location.href = data.redirect; }, 2000);
-            } else if (data.type === 'error') {
-                eventSource.close();
-                bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
-                showMessage('error', data.message);
-            }
-        };
-
-        eventSource.onerror = function() {
-            eventSource.close();
-            bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
-            showMessage('error', 'Error en la conexión con el servidor. Por favor, inténtelo nuevamente.');
-        };
-    }
+    handleFormSubmit(document.getElementById('importFormGithub'));    
 </script>
 {% endblock %}
