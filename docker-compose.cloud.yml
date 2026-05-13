@@ -107,7 +107,7 @@ services:
       # Django
       DEBUG: "False"
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es requerido}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      ALLOWED_HOSTS: "nexscat.com,www.nexscat.com,178.105.51.13"
       DJANGO_SETTINGS_MODULE: iscat.settings
       # SonarQube
       SONARQUBE_URL: http://sonarqube:9000
@@ -132,7 +132,7 @@ services:
       SECURE_SSL_REDIRECT: "False"
       SESSION_COOKIE_SECURE: "False"
       CSRF_COOKIE_SECURE: "False"
-      CSRF_TRUSTED_ORIGINS: "http://178.105.51.13"
+      CSRF_TRUSTED_ORIGINS: "https://nexscat.com,https://www.nexscat.com,http://178.105.51.13"
     depends_on:
       db:
         condition: service_healthy
