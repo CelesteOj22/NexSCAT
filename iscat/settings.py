@@ -206,6 +206,16 @@ else:
     CELERY_TASK_EAGER_PROPAGATES = True
 
 # ============================================
+# CACHE CONFIGURATION (Redis)
+# ============================================
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL", "redis://redis:6379/1"),
+    }
+}
+
+# ============================================
 # PASSWORD VALIDATION
 # ============================================
 AUTH_PASSWORD_VALIDATORS = [

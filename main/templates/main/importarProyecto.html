@@ -383,16 +383,26 @@
         
             const formData = new FormData(this);
         
-            // Fire-and-forget: mandamos el request y redirigimos sin esperar respuesta
             fetch(this.action, {
                 method: 'POST',
                 body: formData,
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            }).catch(() => {});
-        
-            setTimeout(() => {
-                window.location.href = "{% url 'main:dashboardAnalisis' %}";
-            }, 1500);
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage('error', data.error);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
+                } else {
+                    window.location.href = "{% url 'main:dashboardAnalisis' %}";
+                }
+            })
+            .catch(error => {
+                showMessage('error', error.message || 'Error al enviar el formulario');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
+            });
         });
     }
 

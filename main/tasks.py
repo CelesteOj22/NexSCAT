@@ -553,3 +553,74 @@ def _analizar_proyecto_logica(proyecto_path: str, usuario_id: int, token: str, p
     except Exception as e:
         logger.error(f"Error en análisis secuencial: {str(e)}")
         return {'success': False, 'error': str(e)}
+
+@shared_task(bind=True)
+def procesar_zip_y_analizar(self, zip_path: str, usuario_id: int, token: str, session_key: str):
+    """
+    Extrae el ZIP, lanza analizar_proyecto_paralelo por cada proyecto
+    y actualiza Redis con las task_ids individuales para el chip.
+    """
+    import zipfile
+    import shutil
+    import json
+    from pathlib import Path
+    from celery import uuid as celery_uuid
+    from django.cache import cache
+
+    try:
+        zip_path = Path(zip_path)
+        zip_name = zip_path.stem
+        from main.services.ingesta import get_proyectos_dir
+        destino = get_proyectos_dir() / zip_name
+
+        if destino.exists():
+            shutil.rmtree(destino)
+        destino.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            zf.extractall(destino)
+
+        zip_path.unlink(missing_ok=True)
+
+        contents = list(destino.iterdir())
+        if len(contents) == 1 and contents[0].is_dir():
+            proyectos = [p for p in contents[0].iterdir() if p.is_dir()]
+        else:
+            proyectos = [p for p in contents if p.is_dir()]
+
+        user = User.objects.get(id=usuario_id)
+
+        task_ids = []
+        for proyecto in proyectos:
+            project_key = sonar.normalizar_project_key(proyecto.name)
+            project, _ = Project.objects.update_or_create(
+                key=project_key,
+                defaults={
+                    'name': proyecto.name,
+                    'path': str(proyecto),
+                    'created_by': user
+                }
+            )
+            task_id = celery_uuid()
+            transaction.on_commit(
+                lambda pid=project.id_project, tid=task_id, tok=token:
+                    analizar_proyecto_paralelo.apply_async(
+                        kwargs={'project_id': pid, 'token': tok},
+                        task_id=tid
+                    )
+            )
+            task_ids.append({
+                'project_id': project.id_project,
+                'project_name': proyecto.name,
+                'task_id': task_id,
+                'mode': 'parallel',
+            })
+
+        # Guardar las task_ids individuales en cache para que analysis_status las lea
+        cache.set(f'zip_tasks_{session_key}', task_ids, timeout=3600)
+
+        return {'success': True, 'projects': len(task_ids)}
+
+    except Exception as e:
+        logger.error(f"Error en procesar_zip_y_analizar: {e}")
+        raise

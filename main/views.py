@@ -205,7 +205,7 @@ def importarProyecto(request):
     if request.method == 'POST':
         import_type = request.POST.get('import_type', 'zip')
         usu_token = SonarToken.objects.get(user=request.user)
- 
+
         # Verificar SonarQube disponible
         try:
             sonar.check_tool_status(sonar, usu_token.token)
@@ -214,7 +214,7 @@ def importarProyecto(request):
                 return JsonResponse({'error': str(e)}, status=400)
             messages.error(request, str(e))
             return render(request, 'main/importarProyecto.html')
- 
+
         # ── INGESTA: obtener el path del proyecto ──────────────────────
         if import_type == 'zip':
             zip_file = request.FILES.get('zip_file')
@@ -223,64 +223,96 @@ def importarProyecto(request):
                     return JsonResponse({'error': 'No se recibió ningún archivo ZIP.'}, status=400)
                 messages.error(request, 'No se recibió ningún archivo ZIP.')
                 return render(request, 'main/importarProyecto.html')
- 
-            success, mensaje, proyectos = ingesta_zip(zip_file)
- 
+
+            # Guardar ZIP en disco y delegar extracción + análisis a Celery
+            import uuid as _uuid
+            from .tasks import procesar_zip_y_analizar
+            zip_path = f"/tmp/nexscat_{_uuid.uuid4().hex}.zip"
+            with open(zip_path, 'wb') as f:
+                for chunk in zip_file.chunks():
+                    f.write(chunk)
+
+            import zipfile as _zipfile
+            total_projects = '?'
+            try:
+                with _zipfile.ZipFile(zip_path, 'r') as zf:
+                    nombres = zf.namelist()
+                    carpetas = set(
+                        n.split('/')[0] for n in nombres 
+                        if '/' in n and not n.startswith('__MACOSX')
+                    )
+                    total_projects = len(carpetas)
+            except Exception:
+                pass
+
+            task = procesar_zip_y_analizar.delay(zip_path, request.user.id, usu_token.token, request.session.session_key)
+
+            request.session['analysis_tasks'] = [{
+                'task_id': task.id,
+                'project_name': zip_file.name,
+                'mode': 'zip_batch',
+                'project_id': None,
+                'total_projects': total_projects,
+            }]
+            request.session['batch_started_at'] = time.time()
+            request.session['batch_project_names'] = [zip_file.name]
+            request.session['batch_time_saved'] = False
+            request.session.modified = True
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'ok': True})
+            return redirect('main:dashboardAnalisis')
+
         elif import_type == 'github':
             github_url = request.POST.get('github_url', '').strip()
             branch = request.POST.get('branch', '').strip() or None
- 
+
             if not github_url:
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'error': 'Ingresá la URL del repositorio.'}, status=400)
                 messages.error(request, 'Ingresá la URL del repositorio.')
                 return render(request, 'main/importarProyecto.html')
- 
+
             if not github_url.startswith('https://github.com/'):
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'error': 'La URL debe ser de GitHub (https://github.com/...)'}, status=400)
                 messages.error(request, 'La URL debe ser de GitHub (https://github.com/...).')
                 return render(request, 'main/importarProyecto.html')
- 
+
             success, mensaje, project_path = ingesta_github(github_url, branch)
+
+            if not success:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'error': mensaje}, status=400)
+                messages.error(request, mensaje)
+                return render(request, 'main/importarProyecto.html')
+
+            proyectos = [project_path]
+            celery_disponible = is_celery_available()
+
+            if celery_disponible:
+                logger.info("Celery disponible - Ejecutando análisis ASÍNCRONO")
+                result = _analizar_asincrono(request, proyectos, usu_token)
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    task_ids = request.session.get('analysis_tasks', [])
+                    return JsonResponse({'task_ids': task_ids, 'mode': 'async'})
+                return result
+            else:
+                logger.info("Celery no disponible - Ejecutando análisis SÍNCRONO con SSE")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    request.session['analysis_path'] = str(proyectos[0])
+                    request.session['analysis_user_id'] = request.user.id
+                    request.session['analysis_token'] = usu_token.token
+                    request.session.save()
+                    return JsonResponse({'mode': 'sync', 'use_sse': True})
+                return _analizar_sincrono(request, proyectos, usu_token)
+
         else:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'error': 'Tipo de importación no válido.'}, status=400)
             messages.error(request, 'Tipo de importación no válido.')
             return render(request, 'main/importarProyecto.html')
- 
-        # Verificar que la ingesta fue exitosa
-        if not success:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': mensaje}, status=400)
-            messages.error(request, mensaje)
-            return render(request, 'main/importarProyecto.html')
- 
-        # ── PIPELINE: igual que antes, pero con UN solo proyecto ───────
-        celery_disponible = is_celery_available()
- 
-        if celery_disponible:
-            logger.info("Celery disponible - Ejecutando análisis ASÍNCRONO")
-            result = _analizar_asincrono(request, proyectos, usu_token)
- 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                task_ids = request.session.get('analysis_tasks', [])
-                return JsonResponse({'task_ids': task_ids, 'mode': 'async'})
- 
-            return result
-        else:
-            logger.info("Celery no disponible - Ejecutando análisis SÍNCRONO con SSE")
- 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                request.session['analysis_path'] = str(proyectos[0]) if proyectos else ''
-                request.session['analysis_user_id'] = request.user.id
-                request.session['analysis_token'] = usu_token.token
-                request.session.save()
-                return JsonResponse({'mode': 'sync', 'use_sse': True})
- 
-            result = _analizar_sincrono(request, proyectos, usu_token)
-            return result
- 
+
     return render(request, 'main/importarProyecto.html')
 
 
@@ -832,14 +864,43 @@ def component_classes(request, component_id):
 
 @login_required
 def analysis_status(request):
-    """
-    Lee la sesión y consulta Celery para devolver el estado actual del lote.
-    """
+    from django.core.cache import cache
+
     task_data = request.session.get('analysis_tasks', [])
 
     if not task_data:
         return JsonResponse({'active': False})
 
+    # Caso ZIP batch
+    if len(task_data) == 1 and task_data[0].get('mode') == 'zip_batch':
+        zip_task = AsyncResult(task_data[0]['task_id'])
+        session_key = request.session.session_key
+
+        # Chequear si ya hay tareas individuales en cache
+        individual_tasks = cache.get(f'zip_tasks_{session_key}')
+
+        if individual_tasks:
+            # Actualizar sesión con las tareas individuales
+            request.session['analysis_tasks'] = individual_tasks
+            request.session.modified = True
+            task_data = individual_tasks
+            # Caer al caso normal abajo
+        elif zip_task.ready():
+            # Terminó pero no hay tareas (error)
+            request.session.pop('analysis_tasks', None)
+            request.session.modified = True
+            return JsonResponse({'active': False})
+        else:
+            # Todavía extrayendo
+            total_projects = task_data[0].get('total_projects', '?')
+            return JsonResponse({
+                'active': True,
+                'current_project': 'Extrayendo ZIP...',
+                'completed': 0,
+                'total': total_projects,
+            })
+
+    # Caso normal: tareas individuales por proyecto
     total = len(task_data)
     completed = 0
     current_project = None
@@ -849,12 +910,10 @@ def analysis_status(request):
         if task.ready():
             completed += 1
         elif current_project is None:
-            # El primer task no terminado es el "actual"
             current_project = task_info.get('project_name', '')
 
     all_done = completed == total
 
-    # Limpiar sesión cuando todo terminó
     if all_done:
         request.session.pop('analysis_tasks', None)
         request.session.pop('batch_started_at', None)
@@ -863,8 +922,6 @@ def analysis_status(request):
         request.session.modified = True
         return JsonResponse({'active': False})
 
-    # Si queda alguno activo, el current_project puede ser None
-    # (todos en PENDING todavía), usamos el primero del lote
     if current_project is None:
         current_project = task_data[0].get('project_name', '')
 
