@@ -6,10 +6,6 @@
 
 {% block extra_css %}
 <style>
-    /* ============================================
-       ESTILOS HEREDADOS (mantener los existentes)
-       ============================================ */
-
     .dashboard-section {
         padding: 60px 0;
     }
@@ -19,57 +15,33 @@
         margin: 0 auto;
     }
 
-    /* Loading overlay - mantener igual */
     .loading-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         background: rgba(255, 255, 255, 0.95);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        opacity: 0;
-        visibility: hidden;
+        opacity: 0; visibility: hidden;
         transition: opacity 0.3s ease, visibility 0.3s ease;
     }
-
-    .loading-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
+    .loading-overlay.active { opacity: 1; visibility: visible; }
 
     .loading-spinner {
-        width: 60px;
-        height: 60px;
+        width: 60px; height: 60px;
         border: 5px solid #f3f3f3;
         border-top: 5px solid #667eea;
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+    .loading-text { margin-top: 20px; font-size: 1.2rem; color: #667eea; font-weight: 600; }
+    .loading-subtext { margin-top: 10px; font-size: 0.9rem; color: #6c757d; }
 
-    .loading-text {
-        margin-top: 20px;
-        font-size: 1.2rem;
-        color: #667eea;
-        font-weight: 600;
-    }
-
-    .loading-subtext {
-        margin-top: 10px;
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    /* Dashboard header - mantener igual */
     .dashboard-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -78,418 +50,229 @@
         margin-bottom: 30px;
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
+    .dashboard-header h1 { font-size: 1.8rem; margin-bottom: 10px; font-weight: 600; color: white; }
 
-    .dashboard-header h1 {
-        font-size: 1.8rem;
-        margin-bottom: 10px;
-        font-weight: 600;
-        color: white;
-    }
-
-    /* Stats cards - mantener igual */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
-
     .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: white; border-radius: 12px; padding: 25px;
+        text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.05);
         transition: all 0.3s ease;
     }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0,0,0,.1); }
     .stat-card .number {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 10px 0;
+        font-size: 2.5rem; font-weight: bold; margin: 10px 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    .stat-card .label { color: #6c757d; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
 
-    .stat-card .label {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* Filtros - mantener igual */
     .filters-section {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: white; border-radius: 12px; padding: 25px;
+        margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,.05);
     }
-
-    .filter-group {
-        margin-bottom: 15px;
-    }
-
-    .filter-group label {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
-        display: block;
-    }
-
+    .filter-group { margin-bottom: 15px; }
+    .filter-group label { font-weight: 600; color: #495057; margin-bottom: 8px; display: block; }
     .filter-input {
-        border-radius: 12px;
-        border: 2px solid #e0e0e0;
-        padding: 10px 15px;
-        transition: all 0.3s ease;
+        border-radius: 12px; border: 2px solid #e0e0e0; padding: 10px 15px; transition: all 0.3s ease;
     }
+    .filter-input:focus { border-color: #667eea; box-shadow: 0 0 0 0.2rem rgba(102,126,234,.15); outline: none; }
 
-    .filter-input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
-        outline: none;
-    }
-
-    /* Botones - mantener igual */
     .btn-icon-action {
-        background: white;
-        color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: 2px solid #e0e0e0;
-        padding: 10px 15px;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 46px;
-        height: 46px;
+        background: white; border: 2px solid #e0e0e0;
+        padding: 10px 15px; border-radius: 8px; font-size: 1.1rem;
+        transition: all 0.3s ease; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 46px; height: 46px;
     }
-
     .btn-icon-action:hover {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        color: white; border-color: #667eea;
+        transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,.3);
     }
+    .btn-icon-action:focus { outline: none; box-shadow: 0 0 0 0.2rem rgba(102,126,234,.25); }
+    .btn-icon-action i { font-size: 1.2rem; }
+    .btn-icon-action.dropdown-toggle::after { display: none; }
 
-    .btn-icon-action:focus {
-        outline: none;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    .btn-icon-action i {
-        font-size: 1.2rem;
-    }
-
-    .btn-icon-action.dropdown-toggle::after {
-        display: none;
-    }
-
-    /* Dropdown - mantener igual */
     .dropdown-menu {
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        border: 2px solid #e0e0e0;
-        padding: 8px 0;
-        min-width: 200px;
+        border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,.15);
+        border: 2px solid #e0e0e0; padding: 8px 0; min-width: 200px;
     }
-
-    .dropdown-menu-end {
-        right: 0;
-        left: auto;
-    }
-
-    .dropdown-item {
-        padding: 10px 20px;
-        transition: all 0.2s ease;
-        color: #495057;
-        font-size: 0.95rem;
-    }
-
-    .dropdown-item:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .dropdown-item i {
-        margin-right: 8px;
-        width: 20px;
-        text-align: center;
-    }
+    .dropdown-menu-end { right: 0; left: auto; }
+    .dropdown-item { padding: 10px 20px; transition: all 0.2s ease; color: #495057; font-size: 0.95rem; }
+    .dropdown-item:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .dropdown-item i { margin-right: 8px; width: 20px; text-align: center; }
 
     /* ============================================
-       NUEVOS ESTILOS PARA TABLA JERÁRQUICA
+       TABLA JERÁRQUICA
        ============================================ */
 
     .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: white; border-radius: 12px;
+        overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.05);
     }
 
     .hierarchical-table {
-        width: 100%;
-        margin-bottom: 0;
-        border-collapse: collapse;
+        width: 100%; margin-bottom: 0; border-collapse: collapse;
     }
 
-    /* Encabezados */
     .hierarchical-table thead {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
-
     .hierarchical-table thead th {
-        border: none;
-        padding: 15px 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-        vertical-align: middle;
-        white-space: nowrap;
+        border: none; padding: 15px 10px;
+        font-weight: 600; text-transform: uppercase;
+        font-size: 0.85rem; letter-spacing: 0.5px;
+        vertical-align: middle; white-space: nowrap;
     }
 
-    /* Filas */
     .hierarchical-table tbody tr {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s ease; border-bottom: 1px solid #f0f0f0;
     }
+    .hierarchical-table tbody tr:hover { background-color: #f8f9fa; }
+    .hierarchical-table td { padding: 12px 10px; vertical-align: middle; }
 
-    .hierarchical-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
+    /* Niveles de indentación */
+    .hierarchy-level-0 { font-weight: 600; background-color: #f8f9fa; }
+    .hierarchy-level-1 { padding-left: 40px !important; }
+    .hierarchy-level-2 { padding-left: 60px !important; }
+    .hierarchy-level-3 { padding-left: 80px !important; }
 
-    .hierarchical-table td {
-        padding: 12px 10px;
-        vertical-align: middle;
-    }
-
-    /* Niveles jerárquicos con indentación */
-    .hierarchy-level-0 {
-        font-weight: 600;
-        background-color: #f8f9fa;
-    }
-
-    .hierarchy-level-1 {
-        padding-left: 40px !important;
-    }
-
-    .hierarchy-level-2 {
-        padding-left: 60px !important;
-    }
-
-    .hierarchy-level-3 {
-        padding-left: 80px !important;
-    }
-
-    /* Expand/Collapse icons */
     .expand-icon {
-        cursor: pointer;
-        margin-right: 8px;
-        transition: transform 0.2s ease;
-        display: inline-block;
-        width: 20px;
-        text-align: center;
-        color: #667eea;
-        font-size: 0.9rem;
+        cursor: pointer; margin-right: 8px; transition: transform 0.2s ease;
+        display: inline-block; width: 20px; text-align: center;
+        color: #667eea; font-size: 0.9rem;
     }
+    .expand-icon.expanded { transform: rotate(90deg); }
+    .expand-icon:hover { color: #764ba2; }
 
-    .expand-icon.expanded {
-        transform: rotate(90deg);
-    }
+    .child-row { display: none; }
+    .child-row.visible { display: table-row; }
 
-    .expand-icon:hover {
-        color: #764ba2;
-    }
-
-    /* Filas hijas (hidden por defecto) */
-    .child-row {
-        display: none;
-    }
-
-    .child-row.visible {
-        display: table-row;
-    }
-
-    /* Project row (nivel 0) */
     .project-row {
         font-weight: 600;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        background: linear-gradient(135deg, rgba(102,126,234,.1) 0%, rgba(118,75,162,.1) 100%);
     }
+    .project-row td { border-bottom: 2px solid #667eea; }
+    .project-name { font-size: 1.1rem; color: #667eea; font-weight: 600; }
 
-    .project-row td {
-        border-bottom: 2px solid #667eea;
-    }
+    .measure-row { font-size: 0.95rem; }
+    .measure-name { color: #495057; }
+    .measure-value { font-weight: 600; color: #667eea; font-size: 1.05rem; text-align: center; }
 
-    .project-name {
-        font-size: 1.1rem;
-        color: #667eea;
-        font-weight: 600;
-    }
+    .component-row { background-color: rgba(79,172,254,.08); }
+    .component-name { font-weight: 600; color: #4facfe; cursor: help; }
+    .component-name:hover { color: #00f2fe; text-decoration: underline; }
+    .tooltip-inner { max-width: 400px; text-align: left; }
 
-    /* Measure rows (métricas) */
-    .measure-row {
-        font-size: 0.95rem;
-    }
+    .class-row { background-color: rgba(92,184,92,.08); }
+    .class-name { color: #5cb85c; font-weight: 600; cursor: help; }
+    .class-name:hover { color: #449d44; text-decoration: underline; }
 
-    .measure-name {
-        color: #495057;
-    }
-
-    .measure-value {
-        font-weight: 600;
-        color: #667eea;
-        font-size: 1.05rem;
-        text-align: center;
-    }
-
-    /* Component row (nivel 1) */
-    .component-row {
-        background-color: rgba(79, 172, 254, 0.08);
-    }
-
-    .component-name {
-        font-weight: 600;
-        color: #4facfe;
-        cursor: help;
-    }
-
-    .component-name:hover {
-        color: #00f2fe;
-        text-decoration: underline;
-    }
-
-    /* Tooltip más ancho para paths largos */
-    .tooltip-inner {
-        max-width: 400px;
-        text-align: left;
-    }
-
-    /* Class row (nivel 2) */
-    .class-row {
-        background-color: rgba(92, 184, 92, 0.08);
-    }
-
-    .class-name {
-        color: #5cb85c;
-        font-weight: 600;
-        cursor: help;
-    }
-
-    .class-name:hover {
-        color: #449d44;
-        text-decoration: underline;
-    }
-
-    /* Badges */
+    /* Badge solo para filas de entidad (proyecto/componente/clase), NO para métricas */
     .badge-level {
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
+        padding: 4px 10px; border-radius: 6px; font-size: 0.7rem;
+        font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;
+    }
+    .badge-level.proyecto { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .badge-level.componente { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+    .badge-level.clase { background: linear-gradient(135deg, #5cb85c 0%, #449d44 100%); color: white; }
+
+    .no-results { text-align: center; padding: 60px 20px; color: #6c757d; }
+    .no-results i { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+
+    /* ============================================
+       RESPONSIVE — tabla en bloques verticales
+       ============================================ */
+
+    @media (max-width: 768px) {
+        .hierarchical-table thead { display: none; }
+
+        .hierarchical-table,
+        .hierarchical-table tbody,
+        .hierarchical-table tr,
+        .hierarchical-table td {
+            display: block;
+            width: 100%;
+        }
+
+        /* Filas de proyecto/componente/clase: cabecera visual */
+        .project-row,
+        .component-row,
+        .class-row {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* Ocultar celdas vacías de colspan en entidades */
+        .project-row td:empty,
+        .component-row td:empty,
+        .class-row td:empty {
+            display: none;
+        }
+
+        /* Filas de métricas: cada celda muestra su label */
+        .measure-row td {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 6px 12px;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 0.88rem;
+        }
+
+        /* Ocultar celda de nombre de métrica vacía (jerarquía) */
+        .measure-row td:first-child {
+            font-weight: 600;
+            background-color: rgba(102,126,234,.05);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .measure-row td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #667eea;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+
+        /* La celda del nombre no necesita label propio */
+        .measure-row td[data-label=""]::before { display: none; }
+
+        .measure-value { text-align: right !important; }
+
+        /* Reducir indentación en móvil */
+        .hierarchy-level-1 { padding-left: 16px !important; }
+        .hierarchy-level-2 { padding-left: 28px !important; }
+        .hierarchy-level-3 { padding-left: 40px !important; }
+
+        /* child-row.visible como block en móvil */
+        .child-row.visible { display: block; }
     }
 
-    .badge-level.proyecto {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .badge-level.componente {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-    }
-
-    .badge-level.clase {
-        background: linear-gradient(135deg, #5cb85c 0%, #449d44 100%);
-        color: white;
-    }
-
-    /* Estado vacío */
-    .no-results {
-        text-align: center;
-        padding: 60px 20px;
-        color: #6c757d;
-    }
-
-    .no-results i {
-        font-size: 4rem;
-        margin-bottom: 20px;
-        opacity: 0.3;
-    }
-
-    /* Responsive */
     @media (max-width: 992px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .hierarchical-table {
-            font-size: 0.9rem;
-        }
-
-        .hierarchy-level-1 {
-            padding-left: 30px !important;
-        }
-
-        .hierarchy-level-2 {
-            padding-left: 50px !important;
-        }
-
-        .hierarchy-level-3 {
-            padding-left: 70px !important;
-        }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .hierarchical-table { font-size: 0.9rem; }
+        .hierarchy-level-1 { padding-left: 30px !important; }
+        .hierarchy-level-2 { padding-left: 50px !important; }
+        .hierarchy-level-3 { padding-left: 70px !important; }
     }
 
     @media (max-width: 576px) {
-        .dashboard-header h1 {
-            font-size: 1.4rem;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stat-card .number {
-            font-size: 2rem;
-        }
-
-        .hierarchical-table {
-            font-size: 0.85rem;
-        }
-
-        .hierarchy-level-1 {
-            padding-left: 20px !important;
-        }
-
-        .hierarchy-level-2 {
-            padding-left: 35px !important;
-        }
-
-        .hierarchy-level-3 {
-            padding-left: 50px !important;
-        }
+        .dashboard-header h1 { font-size: 1.4rem; }
+        .stats-grid { grid-template-columns: 1fr; }
+        .stat-card .number { font-size: 2rem; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Loading Overlay -->
 <div class="loading-overlay active" id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div class="loading-text">Cargando métricas...</div>
@@ -498,20 +281,19 @@
 
 <div class="dashboard-section">
     <div class="container-xxl px-lg-5 dashboard-container">
-        <!-- Header -->
+
         <div class="dashboard-header">
             <h1>Dashboard de Análisis</h1>
             <p class="mb-0">Vista estructurada de proyectos, componentes y métricas</p>
         </div>
 
-        <!-- Estadísticas -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="label">Proyectos</div>
                 <div class="number">{{ total_projects }}</div>
             </div>
             <div class="stat-card">
-            <div class="label">Métricas de Proyecto</div>
+                <div class="label">Métricas de Proyecto</div>
                 <div class="number">{{ total_project_measures }}</div>
             </div>
             <div class="stat-card">
@@ -525,22 +307,16 @@
             <div class="stat-card">
                 <div class="label">Último Análisis</div>
                 <div class="number" style="font-size: 1.2rem;">
-                    {% if last_analysis %}
-                        {{ last_analysis|date:"d/m/Y" }}
-                    {% else %}
-                        —
-                    {% endif %}
+                    {% if last_analysis %}{{ last_analysis|date:"d/m/Y" }}{% else %}—{% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Filtros -->
         <div class="filters-section">
             <div class="row g-1">
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterSearch">Búsqueda</label>
-                    <input type="text" id="filterSearch" class="form-control filter-input"
-                           placeholder="Buscar...">
+                    <input type="text" id="filterSearch" class="form-control filter-input" placeholder="Buscar...">
                 </div>
                 <div class="col-lg-2 col-md-4 filter-group">
                     <label for="filterProject">Proyecto</label>
@@ -628,17 +404,16 @@
             </div>
         </div>
 
-        <!-- Tabla Jerárquica -->
+        <!-- Tabla Jerárquica — NIVEL eliminado, VALOR centrado -->
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table hierarchical-table" id="hierarchicalTable">
                     <thead>
                         <tr>
                             <th>Entidad / Métrica</th>
-                            <th>Nivel</th>
                             <th>Dominio</th>
                             <th>Herramienta</th>
-                            <th>Valor</th>
+                            <th class="text-center">Valor</th>
                             <th>Descripción</th>
                         </tr>
                     </thead>
@@ -658,7 +433,6 @@
                                         Key: {{ project_node.project_key }}
                                     </small>
                                 </td>
-                                <td><span class="badge-level proyecto">PROYECTO</span></td>
                                 <td colspan="3"></td>
                                 <td>
                                     {% if project_node.last_analysis %}
@@ -675,33 +449,31 @@
                                 data-metric="{{ measure.metric_name }}"
                                 data-tool="{{ measure.tool }}"
                                 data-type="measure">
-                                <td class="hierarchy-level-1">
+                                <td class="hierarchy-level-1" data-label="">
                                     <span class="measure-name">{{ measure.metric_name }}</span>
                                 </td>
-                                <td><span class="badge-level proyecto">MÉTRICA</span></td>
-                                <td><small>{{ measure.domain }}</small></td>
-                                <td><small>{{ measure.tool }}</small></td>
-                                <td class="measure-value">{{ measure.value }}</td>
-                                <td><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
+                                <td data-label="Dominio"><small>{{ measure.domain }}</small></td>
+                                <td data-label="Herramienta"><small>{{ measure.tool }}</small></td>
+                                <td class="measure-value" data-label="Valor">{{ measure.value }}</td>
+                                <td data-label="Descripción"><small class="text-muted">{{ measure.description|truncatewords:10 }}</small></td>
                             </tr>
                             {% endfor %}
                         {% empty %}
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="no-results">
-                                            <i class="bi bi-inbox"></i>
-                                            <h4>No hay métricas disponibles</h4>
-                                            <p>Importa proyectos para ver sus métricas aquí</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td colspan="5">
+                                    <div class="no-results">
+                                        <i class="bi bi-inbox"></i>
+                                        <h4>No hay métricas disponibles</h4>
+                                        <p>Importa proyectos para ver sus métricas aquí</p>
+                                    </div>
+                                </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Botón de Acción -->
         <div class="text-center mt-4">
             <a href="{% url 'main:importarProyecto' %}" class="btn btn-secondary-gradient py-2 px-4">
                 <i class="bi bi-plus-circle"></i> Analizar Más Proyectos
@@ -720,51 +492,38 @@
     function showLoading(message = 'Cargando métricas...', subtext = 'Por favor espera un momento') {
         const overlay = document.getElementById('loadingOverlay');
         if (!overlay) return;
-
-        const textElement = overlay.querySelector('.loading-text');
-        const subtextElement = overlay.querySelector('.loading-subtext');
-
-        if (textElement) textElement.textContent = message;
-        if (subtextElement) subtextElement.textContent = subtext;
-
+        overlay.querySelector('.loading-text').textContent = message;
+        overlay.querySelector('.loading-subtext').textContent = subtext;
         overlay.classList.add('active');
     }
 
     function hideLoading() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (!overlay) return;
-
-        overlay.classList.remove('active');
+        document.getElementById('loadingOverlay')?.classList.remove('active');
     }
 
     // ============================================
     // EXPAND/COLLAPSE CON LAZY LOADING
     // ============================================
 
-    const loadedNodes = new Set(); // para no cargar dos veces
+    const loadedNodes = new Set();
 
     async function toggleNode(nodeId, nodeType, entityId) {
         const row = document.querySelector(`[data-id="${nodeId}"]`);
         const expandIcon = row?.querySelector('.expand-icon');
-        const isExpanded = expandIcon?.classList.contains('expanded');
 
-        // Si ya está expandido, solo colapsar/mostrar
         if (loadedNodes.has(nodeId)) {
-            const childRows = document.querySelectorAll(`[data-parent="${nodeId}"]`);
-            childRows.forEach(r => r.classList.toggle('visible'));
+            document.querySelectorAll(`[data-parent="${nodeId}"]`).forEach(r => r.classList.toggle('visible'));
             expandIcon?.classList.toggle('expanded');
             return;
         }
 
-        // Marcar como cargado
         loadedNodes.add(nodeId);
         expandIcon?.classList.add('expanded');
 
-        // Insertar fila de loading
         const loadingRow = document.createElement('tr');
         loadingRow.className = 'child-row visible';
         loadingRow.setAttribute('data-parent', nodeId);
-        loadingRow.innerHTML = `<td colspan="6" class="text-center py-2">
+        loadingRow.innerHTML = `<td colspan="5" class="text-center py-2">
             <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
             <small class="text-muted">Cargando...</small>
         </td>`;
@@ -772,7 +531,6 @@
 
         try {
             let url, dataKey, renderFn;
-
             if (nodeType === 'project') {
                 url = `/api/project/${entityId}/components/`;
                 dataKey = 'components';
@@ -786,13 +544,11 @@
             const response = await fetch(url);
             const data = await response.json();
             loadingRow.remove();
-            console.log('Data recibida:', data);
-            console.log('Llamando renderFn con parentId:', nodeId);
             renderFn(nodeId, data[dataKey], row);
 
         } catch (err) {
             loadingRow.remove();
-            loadedNodes.delete(nodeId); // permitir reintentar
+            loadedNodes.delete(nodeId);
             console.error('Error cargando datos:', err);
         }
     }
@@ -800,19 +556,15 @@
     function renderComponents(parentId, components, afterRow) {
         let lastInserted = afterRow;
 
-        // Primero insertar las filas de métricas del proyecto que ya están renderizadas
         const existingChildren = document.querySelectorAll(`[data-parent="${parentId}"]`);
         existingChildren.forEach(r => r.classList.add('visible'));
-
         if (existingChildren.length > 0) {
             lastInserted = existingChildren[existingChildren.length - 1];
         }
 
         components.forEach(comp => {
             const compId = `component_${comp.id}`;
-            const hasContent = true; // siempre mostrar expand, las clases se cargan on-demand
 
-            // Fila del componente
             const compRow = document.createElement('tr');
             compRow.className = 'child-row component-row hierarchy-level-1 visible';
             compRow.setAttribute('data-id', compId);
@@ -821,19 +573,17 @@
             compRow.setAttribute('data-type', 'component');
             compRow.innerHTML = `
                 <td class="hierarchy-level-1">
-                    ${hasContent ? `<span class="expand-icon" onclick="toggleNode('${compId}', 'component', ${comp.id})">
+                    <span class="expand-icon" onclick="toggleNode('${compId}', 'component', ${comp.id})">
                         <i class="bi bi-caret-right-fill"></i>
-                    </span>` : ''}
+                    </span>
                     <span class="component-name" title="${comp.path}">${comp.display_name}</span>
                     <small class="text-muted d-block" style="padding-left:28px">${comp.qualifier}</small>
                 </td>
-                <td><span class="badge-level componente">COMPONENTE</span></td>
                 <td colspan="4"></td>`;
 
             lastInserted.insertAdjacentElement('afterend', compRow);
             lastInserted = compRow;
 
-            // Métricas del componente (ocultas por defecto)
             comp.measures.forEach(measure => {
                 const mRow = document.createElement('tr');
                 mRow.className = 'child-row measure-row hierarchy-level-2';
@@ -842,12 +592,11 @@
                 mRow.setAttribute('data-tool', measure.tool);
                 mRow.setAttribute('data-type', 'measure');
                 mRow.innerHTML = `
-                    <td class="hierarchy-level-2"><span class="measure-name">${measure.name}</span></td>
-                    <td><span class="badge-level componente">MÉTRICA</span></td>
-                    <td><small>${measure.domain}</small></td>
-                    <td><small>${measure.tool}</small></td>
-                    <td class="measure-value">${measure.value}</td>
-                    <td><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
+                    <td class="hierarchy-level-2" data-label=""><span class="measure-name">${measure.name}</span></td>
+                    <td data-label="Dominio"><small>${measure.domain}</small></td>
+                    <td data-label="Herramienta"><small>${measure.tool}</small></td>
+                    <td class="measure-value" data-label="Valor">${measure.value}</td>
+                    <td data-label="Descripción"><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
                 lastInserted.insertAdjacentElement('afterend', mRow);
                 lastInserted = mRow;
             });
@@ -857,7 +606,6 @@
     function renderClasses(parentId, classes, afterRow) {
         let lastInserted = afterRow;
 
-        // Mostrar métricas del componente
         const existingChildren = document.querySelectorAll(`[data-parent="${parentId}"]`);
         existingChildren.forEach(r => r.classList.add('visible'));
 
@@ -877,7 +625,6 @@
                     </span>` : ''}
                     <span class="class-name">${cls.name}</span>
                 </td>
-                <td><span class="badge-level clase">CLASE</span></td>
                 <td colspan="4"></td>`;
 
             lastInserted.insertAdjacentElement('afterend', clsRow);
@@ -891,37 +638,27 @@
                 mRow.setAttribute('data-tool', measure.tool);
                 mRow.setAttribute('data-type', 'measure');
                 mRow.innerHTML = `
-                    <td class="hierarchy-level-3"><span class="measure-name">${measure.name}</span></td>
-                    <td><span class="badge-level clase">MÉTRICA</span></td>
-                    <td><small>${measure.domain}</small></td>
-                    <td><small>${measure.tool}</small></td>
-                    <td class="measure-value">${measure.value}</td>
-                    <td><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
+                    <td class="hierarchy-level-3" data-label=""><span class="measure-name">${measure.name}</span></td>
+                    <td data-label="Dominio"><small>${measure.domain}</small></td>
+                    <td data-label="Herramienta"><small>${measure.tool}</small></td>
+                    <td class="measure-value" data-label="Valor">${measure.value}</td>
+                    <td data-label="Descripción"><small class="text-muted">${measure.description.split(' ').slice(0,10).join(' ')}</small></td>`;
                 lastInserted.insertAdjacentElement('afterend', mRow);
                 lastInserted = mRow;
             });
 
-            // Marcar como ya cargado para que el click solo haga toggle
             if (hasContent) loadedNodes.add(clsId);
         });
     }
 
     function expandAll() {
-        document.querySelectorAll('.child-row').forEach(row => {
-            row.classList.add('visible');
-        });
-        document.querySelectorAll('.expand-icon').forEach(icon => {
-            icon.classList.add('expanded');
-        });
+        document.querySelectorAll('.child-row').forEach(r => r.classList.add('visible'));
+        document.querySelectorAll('.expand-icon').forEach(i => i.classList.add('expanded'));
     }
 
     function collapseAll() {
-        document.querySelectorAll('.child-row').forEach(row => {
-            row.classList.remove('visible');
-        });
-        document.querySelectorAll('.expand-icon').forEach(icon => {
-            icon.classList.remove('expanded');
-        });
+        document.querySelectorAll('.child-row').forEach(r => r.classList.remove('visible'));
+        document.querySelectorAll('.expand-icon').forEach(i => i.classList.remove('expanded'));
     }
 
     // ============================================
@@ -934,54 +671,38 @@
         const metricFilter = document.getElementById('filterMetric')?.value.toLowerCase() || '';
         const toolFilter = document.getElementById('filterTool')?.value.toLowerCase() || '';
 
-        const tbody = document.getElementById('tableBody');
-        if (!tbody) return;
-
-        const rows = tbody.getElementsByTagName('tr');
-        let visibleCount = 0;
-
-        for (let row of rows) {
+        for (let row of document.getElementById('tableBody').getElementsByTagName('tr')) {
             const project = row.getAttribute('data-project')?.toLowerCase() || '';
             const metric = row.getAttribute('data-metric')?.toLowerCase() || '';
             const tool = row.getAttribute('data-tool')?.toLowerCase() || '';
             const text = row.textContent.toLowerCase();
 
-            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
-            const matchesProject = projectFilter === '' || project.includes(projectFilter);
-            const matchesMetric = metricFilter === '' || metric.includes(metricFilter);
-            const matchesTool = toolFilter === '' || tool.includes(toolFilter);
+            const matches =
+                (searchTerm === '' || text.includes(searchTerm)) &&
+                (projectFilter === '' || project.includes(projectFilter)) &&
+                (metricFilter === '' || metric.includes(metricFilter)) &&
+                (toolFilter === '' || tool.includes(toolFilter));
 
-            if (matchesSearch && matchesProject && matchesMetric && matchesTool) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = matches ? '' : 'none';
         }
     }
 
     function filterByLevel() {
         const level = document.getElementById('filterLevel')?.value;
-        const rows = document.querySelectorAll('#tableBody tr');
-
-        rows.forEach(row => {
+        document.querySelectorAll('#tableBody tr').forEach(row => {
             const type = row.getAttribute('data-type');
             if (!type) return;
-
             switch(level) {
                 case 'todos':
                     row.style.display = (row.classList.contains('visible') || type === 'project') ? '' : 'none';
                     break;
                 case 'proyecto':
-                    // proyectos + solo métricas de nivel 1
                     row.style.display = (type === 'project' || (type === 'measure' && row.classList.contains('hierarchy-level-1'))) ? '' : 'none';
                     break;
                 case 'componente':
-                    // proyectos + componentes + solo métricas de nivel 2
                     row.style.display = (type === 'project' || type === 'component' || (type === 'measure' && row.classList.contains('hierarchy-level-2'))) ? '' : 'none';
                     break;
                 case 'clase':
-                    // proyectos + componentes + clases + solo métricas de nivel 3
                     row.style.display = (type === 'project' || type === 'component' || type === 'class' || (type === 'measure' && row.classList.contains('hierarchy-level-3'))) ? '' : 'none';
                     break;
             }
@@ -989,38 +710,23 @@
     }
 
     function resetFilters() {
-        const filterSearch = document.getElementById('filterSearch');
-        const filterProject = document.getElementById('filterProject');
-        const filterMetric = document.getElementById('filterMetric');
-        const filterTool = document.getElementById('filterTool');
-
-        if (filterSearch) filterSearch.value = '';
-        if (filterProject) filterProject.value = '';
-        if (filterMetric) filterMetric.value = '';
-        if (filterTool) filterTool.value = '';
-
+        ['filterSearch','filterProject','filterMetric','filterTool'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         filterTable();
     }
 
     // ============================================
-    // EXPORTACIÓN (usar las funciones del archivo anterior)
+    // EXPORTACIÓN
     // ============================================
 
-    function exportToCSV() {
-        exportToCSVHierarchical();
-    }
-
-    function exportToJSON() {
-        exportToJSONHierarchical();
-    }
-
-    function exportToXML() {
-        exportToXMLHierarchical();
-    }
+    function exportToCSV() { exportToCSVHierarchical(); }
+    function exportToJSON() { exportToJSONHierarchical(); }
+    function exportToXML() { exportToXMLHierarchical(); }
 
     async function exportToCSVHierarchical() {
         showLoading('Exportando a CSV...', 'Generando estructura jerárquica');
-
         try {
             const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
@@ -1031,63 +737,30 @@
 
             data.forEach(projectData => {
                 const project = projectData.project;
-
-                // Métricas del proyecto
                 projectData.project_measures.forEach(measure => {
-                    const row = [
-                        'PROYECTO',
-                        project.id,
-                        escapeCSV(project.name),
-                        escapeCSV(project.name),
-                        escapeCSV(measure.name),
-                        escapeCSV(measure.domain),
-                        escapeCSV(measure.tool),
-                        escapeCSV(measure.type),
-                        escapeCSV(measure.value),
-                        escapeCSV(measure.description)
-                    ];
-                    csv += row.join(',') + '\n';
+                    csv += [
+                        'PROYECTO', project.id, escapeCSV(project.name), escapeCSV(project.name),
+                        escapeCSV(measure.name), escapeCSV(measure.domain), escapeCSV(measure.tool),
+                        escapeCSV(measure.type), escapeCSV(measure.value), escapeCSV(measure.description)
+                    ].join(',') + '\n';
                 });
-
-                // Componentes
                 projectData.components.forEach(componentData => {
                     const component = componentData.component;
-
-                    // Métricas del componente
                     componentData.component_measures.forEach(measure => {
-                        const row = [
-                            'COMPONENTE',
-                            project.id,
-                            escapeCSV(project.name),
-                            escapeCSV(component.path),
-                            escapeCSV(measure.name),
-                            escapeCSV(measure.domain),
-                            escapeCSV(measure.tool),
-                            escapeCSV(measure.type),
-                            escapeCSV(measure.value),
-                            escapeCSV(measure.description)
-                        ];
-                        csv += row.join(',') + '\n';
+                        csv += [
+                            'COMPONENTE', project.id, escapeCSV(project.name), escapeCSV(component.path),
+                            escapeCSV(measure.name), escapeCSV(measure.domain), escapeCSV(measure.tool),
+                            escapeCSV(measure.type), escapeCSV(measure.value), escapeCSV(measure.description)
+                        ].join(',') + '\n';
                     });
-
-                    // Clases
                     componentData.classes.forEach(classData => {
                         const classObj = classData.class;
-
                         classData.class_measures.forEach(measure => {
-                            const row = [
-                                'CLASE',
-                                project.id,
-                                escapeCSV(project.name),
-                                escapeCSV(classObj.name),
-                                escapeCSV(measure.name),
-                                escapeCSV(measure.domain),
-                                escapeCSV(measure.tool),
-                                escapeCSV(measure.type),
-                                escapeCSV(measure.value),
-                                escapeCSV(measure.description)
-                            ];
-                            csv += row.join(',') + '\n';
+                            csv += [
+                                'CLASE', project.id, escapeCSV(project.name), escapeCSV(classObj.name),
+                                escapeCSV(measure.name), escapeCSV(measure.domain), escapeCSV(measure.tool),
+                                escapeCSV(measure.type), escapeCSV(measure.value), escapeCSV(measure.description)
+                            ].join(',') + '\n';
                         });
                     });
                 });
@@ -1095,9 +768,7 @@
 
             downloadFile(csv, 'text/csv', 'metricas_jerarquico', 'csv');
             hideLoading();
-
         } catch (error) {
-            console.error('Error:', error);
             hideLoading();
             alert('Error al exportar CSV: ' + error.message);
         }
@@ -1105,18 +776,13 @@
 
     async function exportToJSONHierarchical() {
         showLoading('Exportando a JSON...', 'Generando estructura jerárquica');
-
         try {
             const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
             const result = await response.json();
-
-            const json = JSON.stringify(result.data, null, 2);
-            downloadFile(json, 'application/json', 'metricas_jerarquico', 'json');
+            downloadFile(JSON.stringify(result.data, null, 2), 'application/json', 'metricas_jerarquico', 'json');
             hideLoading();
-
         } catch (error) {
-            console.error('Error:', error);
             hideLoading();
             alert('Error al exportar JSON: ' + error.message);
         }
@@ -1124,111 +790,59 @@
 
     async function exportToXMLHierarchical() {
         showLoading('Exportando a XML...', 'Generando estructura jerárquica');
-
         try {
             const level = document.getElementById('exportLevel')?.value || 'Todos';
             const response = await fetch(`/api/export/hierarchical/?level=${encodeURIComponent(level)}`);
             const result = await response.json();
             const data = result.data;
 
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-            xml += '<projects>\n';
-
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<projects>\n';
             data.forEach(projectData => {
                 const project = projectData.project;
-
-                xml += '  <project>\n';
-                xml += `    <idproject>${escapeXML(project.id)}</idproject>\n`;
-                xml += `    <key>${escapeXML(project.key)}</key>\n`;
-                xml += `    <name>${escapeXML(project.name)}</name>\n`;
+                xml += `  <project>\n    <idproject>${escapeXML(project.id)}</idproject>\n`;
+                xml += `    <key>${escapeXML(project.key)}</key>\n    <name>${escapeXML(project.name)}</name>\n`;
                 xml += `    <qualifier>${escapeXML(project.qualifier)}</qualifier>\n`;
                 xml += `    <lastAnalysis>${escapeXML(project.lastAnalysis || '')}</lastAnalysis>\n`;
-
-                // Project measures
                 xml += '    <project_measures>\n';
-                projectData.project_measures.forEach(measure => {
-                    xml += '      <project_measure>\n';
-                    xml += `        <domain>${escapeXML(measure.domain)}</domain>\n`;
-                    xml += `        <key>${escapeXML(measure.key)}</key>\n`;
-                    xml += `        <name>${escapeXML(measure.name)}</name>\n`;
-                    xml += `        <description>${escapeXML(measure.description)}</description>\n`;
-                    xml += `        <type>${escapeXML(measure.type)}</type>\n`;
-                    xml += `        <value>${escapeXML(measure.value)}</value>\n`;
-                    xml += `        <tool>${escapeXML(measure.tool)}</tool>\n`;
-                    xml += '      </project_measure>\n';
+                projectData.project_measures.forEach(m => {
+                    xml += `      <project_measure><domain>${escapeXML(m.domain)}</domain><key>${escapeXML(m.key)}</key>`;
+                    xml += `<name>${escapeXML(m.name)}</name><description>${escapeXML(m.description)}</description>`;
+                    xml += `<type>${escapeXML(m.type)}</type><value>${escapeXML(m.value)}</value><tool>${escapeXML(m.tool)}</tool></project_measure>\n`;
                 });
-                xml += '    </project_measures>\n';
-
-                // Components
-                xml += '    <components>\n';
+                xml += '    </project_measures>\n    <components>\n';
                 projectData.components.forEach(componentData => {
                     const component = componentData.component;
-
-                    xml += '      <component>\n';
-                    xml += `        <idcomponent>${escapeXML(component.id)}</idcomponent>\n`;
-                    xml += `        <name>${escapeXML(component.name)}</name>\n`;
-                    xml += `        <qualifier>${escapeXML(component.qualifier)}</qualifier>\n`;
-                    xml += `        <path>${escapeXML(component.path)}</path>\n`;
-                    xml += `        <language>${escapeXML(component.language)}</language>\n`;
-
-                    // Component measures
+                    xml += `      <component><idcomponent>${escapeXML(component.id)}</idcomponent>`;
+                    xml += `<name>${escapeXML(component.name)}</name><qualifier>${escapeXML(component.qualifier)}</qualifier>`;
+                    xml += `<path>${escapeXML(component.path)}</path><language>${escapeXML(component.language)}</language>\n`;
                     xml += '        <component_measures>\n';
-                    componentData.component_measures.forEach(measure => {
-                        xml += '          <component_measure>\n';
-                        xml += `            <domain>${escapeXML(measure.domain)}</domain>\n`;
-                        xml += `            <key>${escapeXML(measure.key)}</key>\n`;
-                        xml += `            <name>${escapeXML(measure.name)}</name>\n`;
-                        xml += `            <description>${escapeXML(measure.description)}</description>\n`;
-                        xml += `            <type>${escapeXML(measure.type)}</type>\n`;
-                        xml += `            <value>${escapeXML(measure.value)}</value>\n`;
-                        xml += `            <tool>${escapeXML(measure.tool)}</tool>\n`;
-                        xml += '          </component_measure>\n';
+                    componentData.component_measures.forEach(m => {
+                        xml += `          <component_measure><domain>${escapeXML(m.domain)}</domain><key>${escapeXML(m.key)}</key>`;
+                        xml += `<name>${escapeXML(m.name)}</name><description>${escapeXML(m.description)}</description>`;
+                        xml += `<type>${escapeXML(m.type)}</type><value>${escapeXML(m.value)}</value><tool>${escapeXML(m.tool)}</tool></component_measure>\n`;
                     });
-                    xml += '        </component_measures>\n';
-
-                    // Classes
-                    xml += '        <classes>\n';
+                    xml += '        </component_measures>\n        <classes>\n';
                     componentData.classes.forEach(classData => {
                         const classObj = classData.class;
-
-                        xml += '          <class>\n';
-                        xml += `            <idclass>${escapeXML(classObj.id)}</idclass>\n`;
-                        xml += `            <name>${escapeXML(classObj.name)}</name>\n`;
-                        xml += `            <qualifier>${escapeXML(classObj.qualifier)}</qualifier>\n`;
-
-                        // Class measures
+                        xml += `          <class><idclass>${escapeXML(classObj.id)}</idclass>`;
+                        xml += `<name>${escapeXML(classObj.name)}</name><qualifier>${escapeXML(classObj.qualifier)}</qualifier>\n`;
                         xml += '            <class_measures>\n';
-                        classData.class_measures.forEach(measure => {
-                            xml += '              <class_measure>\n';
-                            xml += `                <domain>${escapeXML(measure.domain)}</domain>\n`;
-                            xml += `                <key>${escapeXML(measure.key)}</key>\n`;
-                            xml += `                <name>${escapeXML(measure.name)}</name>\n`;
-                            xml += `                <description>${escapeXML(measure.description)}</description>\n`;
-                            xml += `                <type>${escapeXML(measure.type)}</type>\n`;
-                            xml += `                <value>${escapeXML(measure.value)}</value>\n`;
-                            xml += `                <tool>${escapeXML(measure.tool)}</tool>\n`;
-                            xml += '              </class_measure>\n';
+                        classData.class_measures.forEach(m => {
+                            xml += `              <class_measure><domain>${escapeXML(m.domain)}</domain><key>${escapeXML(m.key)}</key>`;
+                            xml += `<name>${escapeXML(m.name)}</name><description>${escapeXML(m.description)}</description>`;
+                            xml += `<type>${escapeXML(m.type)}</type><value>${escapeXML(m.value)}</value><tool>${escapeXML(m.tool)}</tool></class_measure>\n`;
                         });
-                        xml += '            </class_measures>\n';
-
-                        xml += '          </class>\n';
+                        xml += '            </class_measures>\n          </class>\n';
                     });
-                    xml += '        </classes>\n';
-
-                    xml += '      </component>\n';
+                    xml += '        </classes>\n      </component>\n';
                 });
-                xml += '    </components>\n';
-
-                xml += '  </project>\n';
+                xml += '    </components>\n  </project>\n';
             });
-
             xml += '</projects>';
 
             downloadFile(xml, 'application/xml', 'metricas_jerarquico', 'xml');
             hideLoading();
-
         } catch (error) {
-            console.error('Error:', error);
             hideLoading();
             alert('Error al exportar XML: ' + error.message);
         }
@@ -1236,73 +850,43 @@
 
     function escapeCSV(str) {
         if (str === null || str === undefined) return '';
-        str = String(str);
-        str = str.replace(/"/g, '""');
-        if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-            str = `"${str}"`;
-        }
-        return str;
+        str = String(str).replace(/"/g, '""');
+        return (str.includes(',') || str.includes('\n') || str.includes('"')) ? `"${str}"` : str;
+    }
+
+    function escapeXML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                          .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
     }
 
     function downloadFile(content, mimeType, baseFilename, extension) {
         const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
         const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
+        link.setAttribute('href', URL.createObjectURL(blob));
         link.setAttribute('download', `${baseFilename}_${new Date().toISOString().slice(0,10)}.${extension}`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
     }
-
-    function escapeXML(str) {
-        // Convertir a string primero, manejar null/undefined
-        if (str === null || str === undefined) return '';
-
-        // Convertir números y otros tipos a string
-        str = String(str);
-
-        // Escapar caracteres especiales
-        return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&apos;');
-    }
-
 
     // ============================================
     // EVENT LISTENERS
     // ============================================
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Filtros
-        const filterSearch = document.getElementById('filterSearch');
-        const filterProject = document.getElementById('filterProject');
-        const filterMetric = document.getElementById('filterMetric');
-        const filterTool = document.getElementById('filterTool');
+        document.getElementById('filterSearch')?.addEventListener('input', filterTable);
+        document.getElementById('filterProject')?.addEventListener('change', filterTable);
+        document.getElementById('filterMetric')?.addEventListener('change', filterTable);
+        document.getElementById('filterTool')?.addEventListener('change', filterTable);
 
-        if (filterSearch) filterSearch.addEventListener('input', filterTable);
-        if (filterProject) filterProject.addEventListener('change', filterTable);
-        if (filterMetric) filterMetric.addEventListener('change', filterTable);
-        if (filterTool) filterTool.addEventListener('change', filterTable);
+        [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            .map(el => new bootstrap.Tooltip(el));
 
-        // Inicializar tooltips de Bootstrap
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Ocultar loading cuando todo esté listo
         hideLoading();
     });
 
-    // Mostrar loading al cambiar de página
-    window.addEventListener('beforeunload', function() {
-        showLoading('Cargando...', 'Un momento por favor');
-    });
+    window.addEventListener('beforeunload', () => showLoading('Cargando...', 'Un momento por favor'));
 </script>
 {% endblock %}
