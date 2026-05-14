@@ -1,32 +1,125 @@
-# NexSCAT - Nexus Source Code Analysis Tool
+# NexSCAT — Nexus Source Code Analysis Tool
 
-> **Plataforma de análisis estático batch de proyectos Java**  
-> Integra SonarQube + SourceMeter sobre Django + Celery + PostgreSQL + Redis  
-> Arquitectura local-first para privacidad de código
+> Plataforma web para el análisis estático de un lote de proyectos Java.  
+> Integra **SonarQube** y **SourceMeter** en una única interfaz, con exportación de métricas en CSV, XML y JSON.
 
----
-
-## 📋 Requisitos del Sistema
-
-- **Ubuntu 24.04 / 25.04** (nativo o VirtualBox)
-- **Docker Engine** (no Docker Desktop)
-- **Git**
-- Mínimo **8 GB de RAM** recomendado
-- Mínimo **20 GB de espacio en disco**
-
-> ⚠️ **Análisis con SourceMeter en Windows/WSL2.**  
-> SourceMeter requiere que sus binarios y el directorio de resultados estén en el mismo filesystem.  
-> En Windows/WSL2 esto es imposible por la separación entre el overlay de Docker y los bind mounts del host.  
-> Se debe ejecutar desde Linux o una VM Linux.
+**Universidad Nacional del Nordeste — Proyecto Final de Carrera, 2026**  
+Autora: Celeste María Luz Ojeda Rodríguez
 
 ---
 
-## 🚀 Instalación
+## 🌐 Demo en vivo
 
-### 1. Instalar Docker en Ubuntu
+NexSCAT está desplegado y accesible en:
+
+**[https://nexscat.com](https://nexscat.com)**
+
+No es necesario instalar nada para explorarlo. Las instrucciones de instalación local a continuación son para quienes deseen ejecutar el sistema en su propio entorno.
+
+---
+
+## Índice
+
+- [Descripción](#descripción)
+- [Arquitectura](#arquitectura)
+- [Requisitos](#requisitos)
+- [Instalación local](#instalación-local)
+- [Despliegue cloud](#despliegue-cloud)
+- [Configuración](#configuración)
+- [Uso](#uso)
+- [Comandos útiles](#comandos-útiles)
+- [Reiniciar análisis](#reiniciar-análisis)
+- [Diagnóstico de errores](#diagnóstico-de-errores)
+
+---
+
+## Descripción
+
+NexSCAT automatiza el análisis estático de lotes de proyectos Java combinando dos herramientas complementarias:
+
+- **SonarQube** — detecta vulnerabilidades, code smells y métricas de mantenibilidad y seguridad.
+- **SourceMeter** — calcula métricas detalladas de complejidad, acoplamiento, cohesión y herencia.
+
+Los análisis se ejecutan en paralelo mediante Celery, los resultados se almacenan en PostgreSQL y se visualizan en un dashboard web con navegación jerárquica por Proyecto → Componente → Clase.
+
+---
+
+## Arquitectura
+
+```
+                        ┌─────────────┐
+                        │  Navegador  │
+                        └──────┬──────┘
+                               │ HTTPS
+                        ┌──────▼──────┐
+                        │ Cloudflare  │  DNS + SSL/TLS + DDoS  [solo cloud]
+                        └──────┬──────┘
+                               │ HTTP (interno)
+                        ┌──────▼──────┐
+                        │    Nginx    │  proxy inverso + archivos estáticos
+                        └──────┬──────┘
+                               │
+                        ┌──────▼──────┐
+                        │   Django    │  lógica de negocio + vistas
+                        └──────┬──────┘
+               ┌───────────────┼───────────────┐
+        ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+        │    Redis    │ │ PostgreSQL  │ │  SonarQube  │
+        │   (broker)  │ │    (BD)     │ │  (análisis) │
+        └──────┬──────┘ └─────────────┘ └─────────────┘
+               │
+        ┌──────▼──────┐
+        │Celery Worker│  ejecuta SonarQube + SourceMeter en paralelo
+        └─────────────┘
+
+  En entorno local: el Navegador conecta directo a Nginx por HTTP (sin Cloudflare).
+```
+
+**Flujo de análisis:**
+1. El usuario importa proyectos (ZIP o repositorio GitHub) desde la interfaz web
+2. Django encola una tarea Celery por herramienta (SonarQube + SourceMeter en paralelo)
+3. SonarQube analiza vía `sonar-scanner` y expone métricas por su API REST
+4. SourceMeter genera archivos CSV con métricas a nivel Package, Class y Method
+5. El sistema procesa y persiste todo en PostgreSQL
+6. El dashboard muestra métricas en tres niveles con opción de exportación
+
+---
+
+## Requisitos
+
+### Sistema operativo
+
+> ⚠️ **NexSCAT requiere Linux nativo o VM Linux.**  
+> SourceMeter necesita que sus binarios y el directorio de resultados estén en el **mismo filesystem**.  
+> En Windows con Docker Desktop o WSL2 esto no es posible por la separación entre el overlay de Docker y los bind mounts del host, lo que produce el error `Invalid cross-device link`.  
+> Se recomienda **Ubuntu 22.04 o 24.04**.
+
+### Software requerido
+
+| Herramienta | Versión mínima |
+|-------------|---------------|
+| Docker Engine | 24.0 |
+| Docker Compose | 2.0 |
+| Git | 2.33 |
+| Git LFS | cualquiera |
+
+> ⚠️ Usar **Docker Engine**, no Docker Desktop.
+
+### Hardware recomendado
+
+| Recurso | Mínimo |
+|---------|--------|
+| RAM | 8 GB |
+| Disco | 20 GB libres |
+| CPU | 2+ núcleos |
+
+---
+
+## Instalación local
+
+### 1. Instalar Docker Engine
 
 ```bash
-# Agregar repositorio oficial de Docker
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 
@@ -35,7 +128,7 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
   sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# Ubuntu 25.04: usar repositorio 'noble' (24.04) por compatibilidad
+# En Ubuntu 25.04: usar repositorio 'noble' (24.04) por compatibilidad
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
   https://download.docker.com/linux/ubuntu noble stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -43,19 +136,28 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# Agregar usuario al grupo docker (evita usar sudo)
+# Ejecutar Docker sin sudo
 sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-### 2. Clonar el repositorio
+### 2. Instalar Git LFS
+
+```bash
+sudo apt-get install git-lfs
+git lfs install
+```
+
+### 3. Clonar el repositorio
 
 ```bash
 git clone https://github.com/CelesteOj22/nexscat.git
 cd nexscat
 ```
 
-### 3. Configurar variables de entorno
+Git LFS descargará automáticamente el binario de SourceMeter (~384 MB) durante el clonado.
+
+### 4. Configurar variables de entorno
 
 ```bash
 cp .env.example .env
@@ -66,7 +168,7 @@ Editá `.env` con tus valores. Mínimo requerido:
 ```env
 DB_PASSWORD=tu_password
 SECRET_KEY=tu_secret_key
-SONARQUBE_TOKEN=     # se completa más adelante
+SONARQUBE_TOKEN=        # se completa en el paso 6
 SCAT_MODE=development
 ```
 
@@ -76,7 +178,7 @@ Para generar el `SECRET_KEY`:
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 
-### 4. Crear carpetas necesarias
+### 5. Crear directorios necesarios
 
 ```bash
 mkdir -p ~/nexscat/sm_results
@@ -84,24 +186,24 @@ mkdir -p ~/nexscat/proyectos
 mkdir -p ~/nexscat/tools
 ```
 
-### 5. Primer arranque (sin SourceMeter configurado)
+### 6. Levantar los servicios
 
 ```bash
 docker compose -f docker-compose.local.yml up -d
 ```
 
-Esperá a que todos los servicios estén healthy (puede tardar 2-3 minutos la primera vez):
+La primera vez puede tardar varios minutos mientras Docker descarga y construye las imágenes. Para verificar que todos los servicios estén activos:
 
 ```bash
 docker compose -f docker-compose.local.yml ps
 ```
 
-### 6. Configurar SonarQube
+### 7. Configurar SonarQube
 
 1. Accedé a [http://localhost:9000](http://localhost:9000)
-2. Login: `admin` / `admin` → cambiá la contraseña cuando lo pida
+2. Login inicial: `admin` / `admin` → cambiá la contraseña cuando lo pida
 3. Ir a: **My Account → Security → Generate Token**
-4. Copiá el token y agregalo al `.env`:
+4. Copiá el token y actualizá `.env`:
    ```env
    SONARQUBE_TOKEN=squ_xxxxxxxxxxxxxxxxxxxxxxxx
    ```
@@ -110,64 +212,65 @@ docker compose -f docker-compose.local.yml ps
    docker compose -f docker-compose.local.yml restart
    ```
 
-### 7. Copiar SourceMeter al host ⚠️ PASO OBLIGATORIO
+### 8. Copiar SourceMeter al host
 
-Este paso es **crítico** para que el análisis con SourceMeter funcione correctamente.  
-SourceMeter necesita que sus binarios y el directorio de resultados estén en el **mismo filesystem**.  
-Al copiarlo al host, tanto `/opt/tools/sourcemeter` como `/opt/sm_results` quedan en el mismo filesystem de Ubuntu, evitando el error `Invalid cross-device link`.
+> ⚠️ **Este paso es obligatorio.** Sin él, SourceMeter fallará con `Invalid cross-device link`.
+
+SourceMeter necesita que sus binarios y el directorio de resultados estén en el mismo filesystem. Al copiarlo al host, `/opt/tools/sourcemeter` y `/opt/sm_results` quedan en el filesystem nativo de Ubuntu.
 
 ```bash
-# Asegurarse de que el contenedor esté corriendo
+# Asegurarse de que el worker esté corriendo
 docker compose -f docker-compose.local.yml up -d celery_worker
 
-# Copiar SourceMeter del contenedor al host
+# Copiar SourceMeter al host
 docker cp nexscat_celery_local:/opt/tools/sourcemeter ~/nexscat/tools/sourcemeter
 
-# Reiniciar para que tome el bind mount
+# Reiniciar para aplicar el bind mount
 docker compose -f docker-compose.local.yml restart celery_worker web
 ```
 
-### 8. Acceder a NexSCAT
+### 9. Verificar acceso
 
-- **Aplicación:** [http://localhost:8000](http://localhost:8000)
-- **SonarQube:** [http://localhost:9000](http://localhost:9000)
-- **Flower (monitor Celery):** [http://localhost:5555](http://localhost:5555)
+| Servicio | URL |
+|----------|-----|
+| Aplicación NexSCAT | http://localhost:8000 |
+| Panel SonarQube | http://localhost:9000 |
+| Monitor Celery (Flower) | http://localhost:5555 |
 
 ---
 
-## 📁 Agregar proyectos para analizar
+## Despliegue cloud
 
-Los proyectos Java deben copiarse a la carpeta `proyectos/` del repositorio:
+NexSCAT incluye un perfil de composición específico para producción (`docker-compose.cloud.yml`) que agrega Nginx como proxy inverso. El stack fue desplegado en una instancia **Hetzner CPX42** (Ubuntu 22.04 LTS) con el dominio **nexscat.com** gestionado a través de **Cloudflare** (DNS + SSL/TLS + protección DDoS).
+
+### Requisitos adicionales
+
+- Instancia Linux con al menos 16 GB de RAM (la CPX42 de Hetzner cubre los requisitos con holgura)
+- Acceso SSH a la instancia
+- Docker Engine, Docker Compose y Git LFS instalados (mismos pasos que en la instalación local)
+
+### Procedimiento
 
 ```bash
-# Copiar un proyecto manualmente
-cp -r /ruta/al/proyecto ~/nexscat/proyectos/nombre-proyecto-1.0
+# 1. Clonar el repositorio en el servidor (con LFS)
+git clone https://github.com/CelesteOj22/nexscat.git
+cd nexscat
 
-# Si tenés los proyectos en una carpeta compartida de VirtualBox (sf_)
-rsync -av --progress /media/sf_nombre_carpeta/ ~/nexscat/proyectos/
+# 2. Configurar variables de producción en .env
+#    Incluir ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, DEBUG=False, etc.
+
+# 3. Levantar el stack de producción
+docker compose -f docker-compose.cloud.yml up --build -d
 ```
 
-> `rsync` es recomendable para copias grandes: si se interrumpe, al correrlo de nuevo retoma donde quedó sin recopiar archivos ya transferidos.
-
-La estructura debe quedar:
-
-```
-~/nexscat/proyectos/
-├── proyecto-a-1.0/
-│   ├── src/
-│   ├── build.xml / pom.xml
-│   └── ...
-├── proyecto-b-2.3/
-└── ...
-```
-
-Luego desde la interfaz web importás el proyecto con la ruta `/app/proyectos/nombre-proyecto-1.0`.
+Una vez desplegado, la aplicación queda accesible en **https://nexscat.com**.  
+Los servicios internos (SonarQube, Flower, PostgreSQL) no están expuestos públicamente y pueden consultarse mediante túneles SSH si es necesario.
 
 ---
 
-## ⚙️ Configuración
+## Configuración
 
-### Variables de entorno importantes
+### Variables de entorno
 
 | Variable | Descripción | Valor por defecto |
 |----------|-------------|-------------------|
@@ -176,7 +279,7 @@ Luego desde la interfaz web importás el proyecto con la ruta `/app/proyectos/no
 | `SONARQUBE_TOKEN` | Token de autenticación SonarQube | (requerido) |
 | `DEBUG` | Modo debug de Django | `True` |
 | `SCAT_MODE` | Modo de análisis | `development` |
-| `MAX_PARALLEL_ANALYSIS` | Análisis simultáneos | `2` |
+| `MAX_PARALLEL_ANALYSIS` | Análisis simultáneos máximos | `2` |
 
 ### Modos de análisis (`SCAT_MODE`)
 
@@ -186,13 +289,45 @@ Luego desde la interfaz web importás el proyecto con la ruta `/app/proyectos/no
 | `production` | Cloud / recursos limitados | 7200s (2h) |
 | `balanced` | Balance rendimiento/recursos | 7200s (2h) |
 | `performance` | Máximo rendimiento local | 1800s (30min) |
-| `auto` | Detección automática ⚠️ puede poner 1200s | variable |
+| `auto` | Detección automática ⚠️ | variable |
 
-> ⚠️ Evitá el modo `auto` si tus proyectos tardan más de 20 minutos en analizarse.
+> ⚠️ Evitá el modo `auto` si tus proyectos tardan más de 20 minutos en analizarse. Puede reducir el timeout a 1200s.
 
 ---
 
-## 🐳 Comandos Docker útiles
+## Uso
+
+### Agregar proyectos para analizar
+
+Los proyectos Java deben ubicarse en la carpeta `proyectos/`:
+
+```bash
+# Copiar un proyecto manualmente
+cp -r /ruta/al/proyecto ~/nexscat/proyectos/nombre-proyecto-1.0
+
+# Desde carpeta compartida de VirtualBox
+rsync -av --progress /media/sf_nombre_carpeta/ ~/nexscat/proyectos/
+```
+
+> `rsync` es recomendable para copias grandes: si se interrumpe, retoma desde donde quedó sin recopiar archivos ya transferidos.
+
+La estructura esperada es:
+
+```
+~/nexscat/proyectos/
+├── proyecto-a-1.0/
+│   ├── src/
+│   ├── pom.xml / build.xml
+│   └── ...
+├── proyecto-b-2.3/
+└── ...
+```
+
+Desde la interfaz web importás el proyecto con la ruta `/app/proyectos/nombre-proyecto-1.0`.
+
+---
+
+## Comandos útiles
 
 ```bash
 # Ver estado de los contenedores
@@ -220,9 +355,9 @@ docker compose -f docker-compose.local.yml up -d --build
 
 ---
 
-## 🗑️ Reiniciar análisis desde cero
+## Reiniciar análisis
 
-Para borrar todos los datos de análisis y empezar de nuevo:
+Para borrar todos los datos de análisis y empezar desde cero:
 
 ```bash
 # 1. Borrar resultados de SourceMeter
@@ -255,16 +390,28 @@ for p in projects.get('components', []):
 
 ---
 
-## 🔍 Diagnóstico de errores
+## Diagnóstico de errores
 
-### Ver errores del análisis
+### Ver estado general del análisis
 
 ```bash
-# Errores generales
 docker compose -f docker-compose.local.yml logs celery_worker --tail=200 | \
   grep -E "✅|❌|⚠️|critical error|succeeded|failed"
+```
 
-# Error específico de SourceMeter
+### Errores comunes
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `Invalid cross-device link` | SourceMeter no copiado al host | Ejecutar el [paso 8](#8-copiar-sourcemeter-al-host) |
+| `FindBugsTask: critical error` | No hay archivos `.class` compilados | Verificar que `_runFB = 'false'` en `sourceMeter.py` |
+| `TimeLimitExceeded(1200)` | Modo `auto` con timeout bajo | Cambiar a `SCAT_MODE=development` en `.env` |
+| `No se encontró directorio de análisis` | Ruta de resultados incorrecta | Verificar que la ruta en `_buscar_directorio_analisis` incluye `project_name` dos veces |
+
+### Comandos de diagnóstico específicos
+
+```bash
+# Error de SourceMeter
 docker compose -f docker-compose.local.yml logs celery_worker --tail=200 | \
   grep -A 10 "DirectoryBasedAnalysisTask"
 
@@ -275,35 +422,3 @@ docker compose -f docker-compose.local.yml logs celery_worker --tail=100 | \
 # Ver CSVs generados por SourceMeter
 find ~/nexscat/sm_results -name "*.csv" | head -20
 ```
-
-### Errores comunes
-
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `Invalid cross-device link` | SourceMeter no está copiado al host | Ejecutar el paso 7 de instalación |
-| `FindBugsTask: critical error` | No hay archivos `.class` compilados | Asegurarse de que `_runFB = 'false'` en `sourceMeter.py` |
-| `TimeLimitExceeded(1200)` | Modo `auto` con timeout bajo | Cambiar `SCAT_MODE=development` en `.env` |
-| `No se encontró directorio de análisis` | Ruta de resultados incorrecta | Verificar que la ruta en `_buscar_directorio_analisis` incluye `project_name` dos veces |
-
----
-
-## 🏗️ Arquitectura
-
-```
-NexSCAT
-├── Django (web)          → http://localhost:8000
-├── Celery Worker         → Análisis paralelo SonarQube + SourceMeter
-├── Redis                 → Broker de tareas Celery
-├── PostgreSQL            → Base de datos (proyectos, métricas)
-├── SonarQube             → http://localhost:9000
-└── Flower                → http://localhost:5555 (monitor de tareas)
-```
-
-### Flujo de análisis
-
-1. Usuario importa proyecto desde la interfaz web
-2. Se lanzan en paralelo: tarea SonarQube + tarea SourceMeter (via Celery)
-3. SonarQube analiza y guarda métricas a nivel proyecto
-4. SourceMeter genera CSVs con métricas a nivel Package y Class
-5. El sistema procesa los CSVs y guarda en PostgreSQL
-6. El dashboard muestra métricas en tres niveles: Proyecto / Componente / Clase
