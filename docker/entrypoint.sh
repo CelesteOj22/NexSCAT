@@ -88,7 +88,10 @@ else
         exec gunicorn iscat.wsgi:application \
             --bind 0.0.0.0:8000 \
             --workers ${GUNICORN_WORKERS:-4} \
-            --timeout 300 \
+            --timeout 600 \
+            --keep-alive 5 \
+            --limit-request-line 0 \
+            --limit-request-field_size 0 \
             --access-logfile - \
             --error-logfile -
     else
