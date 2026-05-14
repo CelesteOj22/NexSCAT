@@ -313,6 +313,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
         right 0px top 50%,
         center bottom;
     background-repeat: no-repeat;
+    background-size: auto, auto, 100% auto;
 }
 .center-wrapper {
     display: flex;
@@ -487,6 +488,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
         right 0px top 50%,
         center top;
     background-repeat: no-repeat;
+    background-size: auto, auto, 100% auto;
 }
 
 .footer .btn.btn-social {
