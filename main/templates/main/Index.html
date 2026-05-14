@@ -3,11 +3,10 @@
 
 {% block title %}NexScat - Home{% endblock %}
 
-<!-- AGREGAR clase "home-page" al body -->
 {% block body_attributes %}data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="51" class="no-padding-top home-page"{% endblock %}
 
 {% block hero %}
-<div class="container-fluid bg-primary hero-header" style="min-height: 570px;">
+<div class="container-fluid bg-primary hero-header" style="min-height: 570px; margin-bottom: 0; padding-bottom: 0;">
     <div class="container px-lg-5">
         <div class="row g-8">
             <div class="col-lg-9 text-center text-lg-start">
@@ -17,11 +16,12 @@
             </div>
         </div>
     </div>
-    <!-- Ola SVG responsive -->
-    <div style="line-height:0; margin-top: 3rem;">
-        <svg viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"
-             style="display:block; width:100%; height:120px;">
-            <path d="M0,60 C360,120 1080,0 1440,60 L1440,120 L0,120 Z" fill="white"/>
+    <!-- Ola de transición hero → contenido -->
+    <div style="line-height: 0; margin-top: 3rem;">
+        <svg viewBox="0 0 1440 100" xmlns="http://www.w3.org/2000/svg"
+             preserveAspectRatio="none"
+             style="display: block; width: 100%; height: 100px;">
+            <path d="M0,40 C320,100 720,0 1080,60 C1200,80 1350,50 1440,40 L1440,100 L0,100 Z" fill="white"/>
         </svg>
     </div>
 </div>
@@ -29,7 +29,7 @@
 
 {% block content %}
 <!-- About Start -->
-<div class="container-fluid py-5" id="about">
+<div class="container-xxl py-5" id="about">
     <div class="container py-5 px-lg-5">
         <div class="row g-5 align-items-center">
             <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.1s">
@@ -46,76 +46,61 @@
 </div>
 <!-- About End -->
 
-<!-- ISO/IEC 25010 -->
- <div class="container-fluid py-5" style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);">
+<!-- ISO/IEC 25010 — container-fluid para que el fondo ocupe todo el ancho -->
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);">
     <div class="container py-5 px-lg-5">
- 
         <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 640px;">
             <h5 class="fw-medium mb-2" style="color: rgba(255,255,255,0.75); letter-spacing: 1px; text-transform: uppercase; font-size: 0.85rem;">Estándar internacional</h5>
             <h1 class="text-white mb-3">Métricas alineadas a ISO/IEC 25010:2023</h1>
             <p style="color: rgba(255,255,255,0.8);">Las métricas recopiladas se mapean a las características de calidad del estándar, brindando una evaluación estructurada y objetiva.</p>
         </div>
- 
         <div class="row g-4 justify-content-center">
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-                <div class="p-4 h-100 rounded-4"
-                     style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
+                <div class="p-4 h-100 rounded-4" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
                     <i class="bi bi-tools d-block mb-2" style="font-size: 1.6rem; color: white;"></i>
                     <h6 class="text-white fw-semibold mb-2">Mantenibilidad</h6>
                     <p class="small mb-0" style="color: rgba(255,255,255,0.7);">Complejidad ciclomática, cohesión y acoplamiento entre módulos.</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
-                <div class="p-4 h-100 rounded-4"
-                     style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
+                <div class="p-4 h-100 rounded-4" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
                     <i class="bi bi-shield-check d-block mb-2" style="font-size: 1.6rem; color: white;"></i>
                     <h6 class="text-white fw-semibold mb-2">Confiabilidad</h6>
                     <p class="small mb-0" style="color: rgba(255,255,255,0.7);">Cobertura de código, detección de bugs y vulnerabilidades potenciales.</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-                <div class="p-4 h-100 rounded-4"
-                     style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
+                <div class="p-4 h-100 rounded-4" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
                     <i class="bi bi-check2-square d-block mb-2" style="font-size: 1.6rem; color: white;"></i>
                     <h6 class="text-white fw-semibold mb-2">Adecuación funcional</h6>
                     <p class="small mb-0" style="color: rgba(255,255,255,0.7);">Tamaño funcional, líneas de código efectivas y densidad de comentarios.</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
-                <div class="p-4 h-100 rounded-4"
-                     style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
+                <div class="p-4 h-100 rounded-4" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
                     <i class="bi bi-arrow-repeat d-block mb-2" style="font-size: 1.6rem; color: white;"></i>
                     <h6 class="text-white fw-semibold mb-2">Reusabilidad</h6>
                     <p class="small mb-0" style="color: rgba(255,255,255,0.7);">Herencia, profundidad de árbol y número de hijos por clase.</p>
                 </div>
             </div>
- 
         </div>
     </div>
 </div>
 <!-- ISO/IEC 25010 -->
 
-<!-- How does it work -->
- <div class="container-fluid py-5" style="background: #fafbff;">
+<!-- How does it work — container-fluid para que el fondo ocupe todo el ancho -->
+<div class="container-fluid py-5" style="background: #fafbff;">
     <div class="container py-5 px-lg-5">
- 
         <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
             <h5 class="text-primary-gradient fw-medium">Flujo de trabajo</h5>
             <h1 class="mb-3">¿Cómo funciona NexSCAT?</h1>
             <p class="text-muted">En tres pasos simples obtenés un análisis completo de calidad de tu proyecto Java.</p>
         </div>
- 
         <div class="row g-4 justify-content-center">
- 
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
                 <div class="text-center px-3 position-relative">
                     <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%;
-                                background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-folder2-open" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
                     <span class="badge text-primary-gradient border border-primary-gradient mb-2"
@@ -124,12 +109,10 @@
                     <p class="text-muted small">Cargá un archivo ZIP o ingresá la URL de un repositorio GitHub público de Java.</p>
                 </div>
             </div>
- 
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
                 <div class="text-center px-3">
                     <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%;
-                                background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-gear-wide-connected" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
                     <span class="badge text-primary-gradient border border-primary-gradient mb-2"
@@ -138,12 +121,10 @@
                     <p class="text-muted small">SonarQube y SourceMeter procesan el código en paralelo y extraen más de 170 métricas de calidad.</p>
                 </div>
             </div>
- 
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
                 <div class="text-center px-3">
                     <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%;
-                                background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-bar-chart-line" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
                     <span class="badge text-primary-gradient border border-primary-gradient mb-2"
@@ -152,60 +133,48 @@
                     <p class="text-muted small">Navegá los resultados por proyecto, componente o clase. Exportá en XML, JSON o CSV.</p>
                 </div>
             </div>
- 
         </div>
     </div>
 </div>
- <!-- How does it work -->
+<!-- How does it work -->
 
 <!-- Alcance -->
- <div class="container-fluid py-5">
+<div class="container-xxl py-5">
     <div class="container py-5 px-lg-5">
- 
         <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
             <h5 class="text-primary-gradient fw-medium">Alcance del análisis</h5>
             <h1 class="mb-3">Cobertura completa de métricas</h1>
             <p class="text-muted">NexSCAT organiza los resultados en tres niveles de granularidad para que puedas analizar la calidad a cualquier escala.</p>
         </div>
- 
         <div class="row g-4 justify-content-center">
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-                <div class="text-center p-4 h-100 rounded-4 shadow-sm border"
-                     style="border-color: rgba(111,66,193,0.1) !important;">
+                <div class="text-center p-4 h-100 rounded-4 shadow-sm border" style="border-color: rgba(111,66,193,0.1) !important;">
                     <h2 class="display-5 fw-bold text-primary-gradient mb-1">172</h2>
                     <p class="fw-semibold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 1px; color:#888;">Métricas</p>
                     <p class="text-muted small mb-0">en total</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
-                <div class="text-center p-4 h-100 rounded-4 shadow-sm border"
-                     style="border-color: rgba(111,66,193,0.1) !important;">
+                <div class="text-center p-4 h-100 rounded-4 shadow-sm border" style="border-color: rgba(111,66,193,0.1) !important;">
                     <h2 class="display-5 fw-bold text-primary-gradient mb-1">3</h2>
                     <p class="fw-semibold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 1px; color:#888;">Niveles</p>
                     <p class="text-muted small mb-0">Proyecto · Componente · Clase</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-                <div class="text-center p-4 h-100 rounded-4 shadow-sm border"
-                     style="border-color: rgba(111,66,193,0.1) !important;">
+                <div class="text-center p-4 h-100 rounded-4 shadow-sm border" style="border-color: rgba(111,66,193,0.1) !important;">
                     <h2 class="display-5 fw-bold text-primary-gradient mb-1">2</h2>
                     <p class="fw-semibold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 1px; color:#888;">Herramientas</p>
                     <p class="text-muted small mb-0">SonarQube + SourceMeter</p>
                 </div>
             </div>
- 
             <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
-                <div class="text-center p-4 h-100 rounded-4 shadow-sm border"
-                     style="border-color: rgba(111,66,193,0.1) !important;">
+                <div class="text-center p-4 h-100 rounded-4 shadow-sm border" style="border-color: rgba(111,66,193,0.1) !important;">
                     <h2 class="display-5 fw-bold text-primary-gradient mb-1">3</h2>
                     <p class="fw-semibold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 1px; color:#888;">Formatos</p>
                     <p class="text-muted small mb-0">XML · JSON · CSV</p>
                 </div>
             </div>
- 
         </div>
     </div>
 </div>

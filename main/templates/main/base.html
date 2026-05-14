@@ -165,7 +165,7 @@
 </head>
 
 <body {% block body_attributes %}{% if not user.is_authenticated %}class="not-authenticated"{% endif %}{% endblock %}>
-    <div class="container-fluid bg-white p-0">
+    <div class="container-xxl bg-white p-0">
         <!-- Spinner Start -->
         <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
             <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
@@ -175,7 +175,7 @@
         <!-- Spinner End -->
 
         <!-- Navbar Start -->
-        <div class="container-fluid position-relative p-0" id="home">
+        <div class="container-xxl position-relative p-0" id="home">
             <nav class="navbar navbar-expand-lg navbar-light px-4 px-lg-5 py-3 py-lg-0">
                 <a href="{% url 'main:home' %}" class="navbar-brand p-0">
                     <h1 class="m-0">NexSCAT</h1>
@@ -293,19 +293,15 @@
         <!-- Content End -->
 
         <!-- Footer Start -->
-         <div class="container-fluid bg-primary text-light footer">
-            <!-- Ola SVG en el top del footer -->
-            <div style="line-height:0; margin-bottom: 2rem;">
-                <svg viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"
-                    style="display:block; width:100%; height:120px; margin-top:-120px;">
-                    <path d="M0,60 C360,0 1080,120 1440,60 L1440,0 L0,0 Z" fill="white"/>
+        <div class="container-fluid bg-primary text-light footer wow fadeIn" data-wow-delay="0.1s" style="padding-top: 0; margin-top: 0;">
+            <!-- Ola de transición contenido → footer -->
+            <div style="line-height: 0;">
+                <svg viewBox="0 0 1440 100" xmlns="http://www.w3.org/2000/svg"
+                     preserveAspectRatio="none"
+                     style="display: block; width: 100%; height: 100px;">
+                    <path d="M0,60 C320,0 720,100 1080,40 C1200,20 1350,50 1440,60 L1440,0 L0,0 Z" fill="white"/>
                 </svg>
             </div>
-            <div class="container py-5 px-lg-5">
-                ...
-            </div>
-        </div>
-        <div class="container-fluid bg-primary text-light footer wow fadeIn" data-wow-delay="0.1s">
             <div class="container py-5 px-lg-5">
                 <div class="row g-5">
                     <div class="col-md-6 col-lg-4">
