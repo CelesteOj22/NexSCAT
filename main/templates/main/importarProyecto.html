@@ -380,15 +380,21 @@
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando análisis...';
-
+        
             const formData = new FormData(this);
-
+        
+            // Timeout de 90s: si el servidor tarda más, redirigimos igual
+            const timeoutId = setTimeout(() => {
+                window.location.href = "{% url 'main:dashboardAnalisis' %}";
+            }, 90000);
+        
             fetch(this.action, {
                 method: 'POST',
                 body: formData,
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(response => {
+                clearTimeout(timeoutId);
                 if (!response.ok) {
                     return response.json().then(data => { throw new Error(data.error || 'Error en el servidor'); });
                 }
@@ -400,11 +406,11 @@
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
                 } else {
-                    // Tanto async como sync → redirigir. El chip flotante se encarga del monitoreo.
                     window.location.href = "{% url 'main:dashboardAnalisis' %}";
                 }
             })
             .catch(error => {
+                clearTimeout(timeoutId);
                 console.error('Error:', error);
                 showMessage('error', error.message || 'Error al enviar el formulario');
                 submitBtn.disabled = false;
