@@ -165,7 +165,7 @@
 </head>
 
 <body {% block body_attributes %}{% if not user.is_authenticated %}class="not-authenticated"{% endif %}{% endblock %}>
-    <div class="container-xxl bg-white p-0">
+    <div class="container-fluid bg-white p-0">
         <!-- Spinner Start -->
         <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
             <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
@@ -175,7 +175,7 @@
         <!-- Spinner End -->
 
         <!-- Navbar Start -->
-        <div class="container-xxl position-relative p-0" id="home">
+        <div class="container-fluid position-relative p-0" id="home">
             <nav class="navbar navbar-expand-lg navbar-light px-4 px-lg-5 py-3 py-lg-0">
                 <a href="{% url 'main:home' %}" class="navbar-brand p-0">
                     <h1 class="m-0">NexSCAT</h1>
