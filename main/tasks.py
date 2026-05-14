@@ -565,7 +565,7 @@ def procesar_zip_y_analizar(self, zip_path: str, usuario_id: int, token: str, se
     import json
     from pathlib import Path
     from celery import uuid as celery_uuid
-    from django.cache import cache
+    from django.core.cache import cache
 
     try:
         zip_path = Path(zip_path)
