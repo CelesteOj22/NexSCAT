@@ -376,12 +376,17 @@
           const chipName = document.getElementById('chip-project-name');
           const chipCompleted = document.getElementById('chip-completed');
           const chipTotal = document.getElementById('chip-total');
-
+        
+          let seenActive = false;
+          const startTime = Date.now();
+          const MAX_WAIT_MS = 5 * 60 * 1000;
+        
           function checkStatus() {
             fetch("{% url 'main:analysis_status' %}")
               .then(r => r.json())
               .then(data => {
                 if (data.active) {
+                  seenActive = true;
                   chipName.textContent = data.current_project;
                   chipCompleted.textContent = data.completed;
                   chipTotal.textContent = data.total;
@@ -389,9 +394,12 @@
                   setTimeout(checkStatus, 5000);
                 } else {
                   chip.style.display = 'none';
+                  if (!seenActive && (Date.now() - startTime) < MAX_WAIT_MS) {
+                    setTimeout(checkStatus, 5000);
+                  }
                 }
               })
-              .catch(() => setTimeout(checkStatus, 10000)); // si falla, reintenta más lento
+              .catch(() => setTimeout(checkStatus, 10000));
           }
       
           checkStatus();
