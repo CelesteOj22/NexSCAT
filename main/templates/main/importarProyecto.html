@@ -379,30 +379,52 @@
             e.preventDefault();
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando análisis...';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Subiendo archivo...';
         
             const formData = new FormData(this);
+            const xhr = new XMLHttpRequest();
         
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    showMessage('error', data.error);
+            // Progreso del upload
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    const mb = (e.loaded / 1024 / 1024).toFixed(1);
+                    const total = (e.total / 1024 / 1024).toFixed(1);
+                    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Subiendo... ${percent}% (${mb}/${total} MB)`;
+                }
+            });
+        
+            // Upload completo, servidor procesando
+            xhr.upload.addEventListener('load', function() {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+            });
+        
+            xhr.addEventListener('load', function() {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showMessage('error', data.error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
+                    } else {
+                        window.location.href = "{% url 'main:dashboardAnalisis' %}";
+                    }
+                } catch {
+                    showMessage('error', 'Error al procesar la respuesta del servidor');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
-                } else {
-                    window.location.href = "{% url 'main:dashboardAnalisis' %}";
                 }
-            })
-            .catch(error => {
-                showMessage('error', error.message || 'Error al enviar el formulario');
+            });
+        
+            xhr.addEventListener('error', function() {
+                showMessage('error', 'Error de conexión');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-upload"></i> Analizar Proyecto';
             });
+        
+            xhr.open('POST', this.action);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.send(formData);
         });
     }
 
