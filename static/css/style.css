@@ -317,15 +317,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 .hero-header {
     margin-bottom: 0;
     padding: 16rem 0 0 0;
-    background:
-        url(../img/bg-circle.png),
-        url(../img/bg-triangle.png),
-        linear-gradient(to bottom right, var(--primary), var(--secondary));
-    background-position:
-        left 0px top 0px,
-        right 0px top 50%,
-        center bottom;
-    background-repeat: no-repeat;
+    background: linear-gradient(to bottom right, var(--primary), var(--secondary));
 }
 
 .center-wrapper {
@@ -504,15 +496,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 .footer {
     margin-top: 0;
     padding-top: 3rem;
-    background:
-        url(../img/bg-circle.png),
-        url(../img/bg-triangle.png),
-        linear-gradient(to bottom right, var(--primary), var(--secondary));
-    background-position:
-        left 0px bottom 0px,
-        right 0px top 50%,
-        center top;
-    background-repeat: no-repeat;
+    background: linear-gradient(to bottom right, var(--primary), var(--secondary));
 }
 
 .footer .btn.btn-social {
