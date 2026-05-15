@@ -302,7 +302,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 /*** Hero Header ***/
 .hero-header {
     margin-bottom: 6rem;
-    padding: 16rem 0 0 0;
+    padding: 11rem 0 0 0;
     background:
         url(../img/bg-circle.png),
         url(../img/bg-triangle.png),
@@ -477,7 +477,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 /*** Footer ***/
 .footer {
     margin-top: 6rem;
-    padding-top: 9rem;
+    padding-top: 4rem;
     background:
         url(../img/bg-circle.png),
         url(../img/bg-triangle.png),
