@@ -9,156 +9,42 @@
     <meta content="" name="keywords">
     <meta content="" name="description">
 
-    <!-- Favicon -->
     <link href="https://www.flaticon.es/iconos-gratis/analitica-de-datos" title="analítica de datos iconos" rel="icon">
 
-    <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500&family=Jost:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Icon Font Stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
-
-    <!-- Libraries Stylesheet -->
     <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
     <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
-
-    <!-- Customized Bootstrap Stylesheet -->
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-
-    <!-- Template Stylesheet -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
 
-    <!-- sweetalert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- CSS Global -->
     <style>
-    /* ============================================
-    PADDING PARA EVITAR SOLAPAMIENTO
-    ============================================ */
-    body {
-        padding-top: 90px;
-    }
-
-    /* Páginas con hero sin padding */
-    body.no-padding-top {
-        padding-top: 0 !important;
-    }
-
-    body.not-authenticated {
-        padding-top: 110px; /* Más espacio cuando no está logueado */
-    }
-
-    /* ============================================
-       ESTILOS GLOBALES COMPARTIDOS
-       ============================================ */
-    .page-content {
-        min-height: calc(100vh - 400px);
-    }
-
-    /* Tool badges */
-    .tool-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .tool-badge.sonarqube {
-        background-color: #e3f2fd;
-        color: #1976d2;
-    }
-
-    .tool-badge.sourcemeter {
-        background-color: #e8f5e9;
-        color: #388e3c;
-    }
-
-    .tool-badge.checkstyle {
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-
-    /* Form controls mejorados */
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
-    }
-
-    /* Badge para admin en navbar */
-    .admin-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-size: 0.65rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        margin-left: 4px;
-        font-weight: 600;
-    }
-
-    /* Estilos para el dropdown de usuario */
-    .user-dropdown {
-        cursor: pointer;
-    }
-
-    .user-dropdown .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 1.1rem;
-        transition: all 0.3s ease;
-    }
-
-    .user-dropdown:hover .user-avatar {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .user-dropdown .dropdown-toggle::after {
-        display: none;
-    }
-
-    .user-dropdown .dropdown-menu {
-        min-width: 200px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        border: none;
-        margin-top: 10px;
-    }
-
-    .user-dropdown .dropdown-item {
-        padding: 10px 20px;
-        transition: all 0.2s ease;
-    }
-
-    .user-dropdown .dropdown-item:hover {
-        background-color: #f8f9fa;
-        padding-left: 25px;
-    }
-
-    .user-dropdown .dropdown-divider {
-        margin: 0.5rem 0;
-    }
-
-    .user-dropdown .dropdown-header {
-        padding: 10px 20px;
-        font-weight: 600;
-        color: #667eea;
-    }
+    body { padding-top: 90px; }
+    body.no-padding-top { padding-top: 0 !important; }
+    body.not-authenticated { padding-top: 110px; }
+    .page-content { min-height: calc(100vh - 400px); }
+    .tool-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .tool-badge.sonarqube { background-color: #e3f2fd; color: #1976d2; }
+    .tool-badge.sourcemeter { background-color: #e8f5e9; color: #388e3c; }
+    .tool-badge.checkstyle { background-color: #fff3e0; color: #f57c00; }
+    .form-control:focus, .form-select:focus { border-color: #667eea; box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15); }
+    .admin-badge { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 600; }
+    .user-dropdown { cursor: pointer; }
+    .user-dropdown .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; }
+    .user-dropdown:hover .user-avatar { transform: scale(1.05); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+    .user-dropdown .dropdown-toggle::after { display: none; }
+    .user-dropdown .dropdown-menu { min-width: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border: none; margin-top: 10px; }
+    .user-dropdown .dropdown-item { padding: 10px 20px; transition: all 0.2s ease; }
+    .user-dropdown .dropdown-item:hover { background-color: #f8f9fa; padding-left: 25px; }
+    .user-dropdown .dropdown-divider { margin: 0.5rem 0; }
+    .user-dropdown .dropdown-header { padding: 10px 20px; font-weight: 600; color: #667eea; }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -186,76 +72,43 @@
                 <div class="collapse navbar-collapse" id="navbarCollapse">
                     <div class="navbar-nav mx-auto py-0">
                         {% if user.is_authenticated %}
-                            <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                                Home
-                            </a>
-                            <a href="{% url 'main:importarProyecto' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'importarProyecto' %}active{% endif %}">
-                                Importar Proyecto
-                            </a>
-                            <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">
-                                Proyectos Analizados
-                            </a>
+                            <a href="{% url 'main:home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+                            <a href="{% url 'main:importarProyecto' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'importarProyecto' %}active{% endif %}">Importar Proyecto</a>
+                            <a href="{% url 'main:dashboardAnalisis' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboardAnalisis' %}active{% endif %}">Proyectos Analizados</a>
                         {% endif %}
                     </div>
-
                     {% if user.is_authenticated %}
-                        <!-- Dropdown de Usuario -->
                         <div class="dropdown user-dropdown ms-3">
                             <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <div class="user-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
+                                <div class="user-avatar"><i class="fas fa-user"></i></div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li>
                                     <div class="dropdown-header">
                                         {{ user.username }}
-                                        {% if user.is_superuser %}
-                                            <span class="admin-badge">ADMIN</span>
-                                        {% endif %}
+                                        {% if user.is_superuser %}<span class="admin-badge">ADMIN</span>{% endif %}
                                     </div>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'main:configurarToken' %}">
-                                        <i class="fas fa-key me-2"></i>Configurar Token
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'main:estado_herramientas' %}">
-                                        <i class="bi bi-wrench"></i> Estado de herramientas
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{% url 'main:configurarToken' %}"><i class="fas fa-key me-2"></i>Configurar Token</a></li>
+                                <li><a class="dropdown-item" href="{% url 'main:estado_herramientas' %}"><i class="bi bi-wrench"></i> Estado de herramientas</a></li>
                                 {% if user.is_superuser %}
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'main:user_management' %}">
-                                            <i class="fas fa-users-cog me-1"></i>Administrar usuarios
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item" href="{% url 'main:user_management' %}"><i class="fas fa-users-cog me-1"></i>Administrar usuarios</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'main:logout' %}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{% url 'main:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                             </ul>
                         </div>
                     {% else %}
-                        <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">
-                            Login
-                        </a>
+                        <a href="{% url 'main:login' %}" class="btn btn-primary-gradient rounded-pill py-2 px-4 ms-3 d-none d-lg-block">Login</a>
                     {% endif %}
                 </div>
             </nav>
+
+            {% block hero %}{% endblock %}
         </div>
         <!-- Navbar End -->
 
-        {% block hero %}
-            <!-- Hero section solo aparece en páginas que lo definan -->
-        {% endblock %}
-
-        <!-- Messages Start -->
         {% if messages %}
             <div class="container px-lg-5 mt-4">
                 {% for message in messages %}
@@ -266,12 +119,9 @@
                 {% endfor %}
             </div>
         {% endif %}
-        <!-- Messages End -->
 
-        <!-- Content Start -->
         <div class="page-content">
-            {% block content %}
-            {% endblock %}
+            {% block content %}{% endblock %}
         </div>
 
         <!-- Chip flotante de análisis en progreso -->
@@ -290,64 +140,52 @@
             </div>
           </div>
         </div>
-        <!-- Content End -->
-    </div>    
-    <!-- Wave superior footer -->
-    <div class="footer-wave">
-        <svg xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 1440 120"
-             preserveAspectRatio="none">
-            <path fill="#6f42c1"
-                  d="M0,64 C360,0 1080,120 1440,64 L1440,120 L0,120 Z">
-            </path>
-        </svg>
-    </div>
-    <!-- Footer Start -->
-    <div class="container-fluid bg-primary text-light footer wow fadeIn" data-wow-delay="0.1s" >
-        <div class="container py-5 px-lg-5">
-            <div class="row g-5">
-                <div class="col-md-6 col-lg-4">
-                    <h4 class="text-white mb-4">NexSCAT</h4>
-                    <p class="mb-2">Integración de herramientas del análisis estático del código para el soporte de estudios empíricos en la calidad del software</p>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <h4 class="text-white mb-4">Github</h4>
-                    <a class="btn btn-link" href="https://github.com/CelesteOj22/NexSCAT" target="_blank">NexSCAT Repository</a>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <h4 class="text-white mb-4">Sitios Web Oficiales</h4>
-                    <a class="btn btn-link" href="https://www.sonarsource.com/products/sonarqube/" target="_blank">SonarQube</a>
-                    <a class="btn btn-link" href="https://sourcemeter.com/" target="_blank">SourceMeter</a>
+
+        <!-- Footer Start -->
+        <div class="container-fluid bg-primary text-light footer wow fadeIn" data-wow-delay="0.1s">
+            <div class="container py-5 px-lg-5">
+                <div class="row g-5">
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">NexSCAT</h4>
+                        <p class="mb-2">Integración de herramientas del análisis estático del código para el soporte de estudios empíricos en la calidad del software</p>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">Github</h4>
+                        <a class="btn btn-link" href="https://github.com/CelesteOj22/NexSCAT" target="_blank">NexSCAT Repository</a>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">Sitios Web Oficiales</h4>
+                        <a class="btn btn-link" href="https://www.sonarsource.com/products/sonarqube/" target="_blank">SonarQube</a>
+                        <a class="btn btn-link" href="https://sourcemeter.com/" target="_blank">SourceMeter</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="container px-lg-5">
-            <div class="copyright">
-                <div class="row">
-                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                        &copy; {% now "Y" %} <a class="border-bottom" href="{% url 'main:home' %}">NexSCAT</a>, Todos los derechos reservados.
-                    </div>
-                    <div class="col-md-6 text-center text-md-end">
-                        <div class="footer-menu">
-                            <a href="{% url 'main:home' %}">Home</a>
-                            <a href="{% url 'main:dashboardAnalisis' %}">Dashboard</a>
-                            {% if user.is_authenticated %}
-                                <a href="{% url 'main:logout' %}">Cerrar Sesión</a>
-                            {% else %}
-                                <a href="{% url 'main:login' %}">Login</a>
-                            {% endif %}
+            <div class="container px-lg-5">
+                <div class="copyright">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                            &copy; {% now "Y" %} <a class="border-bottom" href="{% url 'main:home' %}">NexSCAT</a>, Todos los derechos reservados.
+                        </div>
+                        <div class="col-md-6 text-center text-md-end">
+                            <div class="footer-menu">
+                                <a href="{% url 'main:home' %}">Home</a>
+                                <a href="{% url 'main:dashboardAnalisis' %}">Dashboard</a>
+                                {% if user.is_authenticated %}
+                                    <a href="{% url 'main:logout' %}">Cerrar Sesión</a>
+                                {% else %}
+                                    <a href="{% url 'main:login' %}">Login</a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <!-- Footer End -->
-    </div>
-    <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-lg-square back-to-top pt-2"><i class="bi bi-arrow-up text-white"></i></a>
-    
 
-    <!-- JavaScript Libraries -->
+        <a href="#" class="btn btn-lg btn-lg-square back-to-top pt-2"><i class="bi bi-arrow-up text-white"></i></a>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'lib/wow/wow.min.js' %}"></script>
@@ -355,18 +193,10 @@
     <script src="{% static 'lib/waypoints/waypoints.min.js' %}"></script>
     <script src="{% static 'lib/counterup/counterup.min.js' %}"></script>
     <script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
-
-    <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
 
-    <!-- Script MEJORADO para controlar navbar -->
     <script>
-        // Desactivar el comportamiento automático de sticky-top
-        // Solo aplicar efecto scroll en home-page
-
-        $(window).off('scroll'); // Desactivar eventos scroll del main.js
-
-        // Solo en home page: cambiar navbar al hacer scroll
+        $(window).off('scroll');
         if (document.body.classList.contains('home-page')) {
             $(window).scroll(function() {
                 if ($(this).scrollTop() > 50) {
@@ -376,7 +206,6 @@
                 }
             });
         } else {
-            // En otras páginas: navbar siempre tiene sticky-top (fondo blanco fijo)
             $('.navbar').addClass('sticky-top');
         }
         {% if user.is_authenticated %}
@@ -385,11 +214,9 @@
           const chipName = document.getElementById('chip-project-name');
           const chipCompleted = document.getElementById('chip-completed');
           const chipTotal = document.getElementById('chip-total');
-        
           let seenActive = false;
           const startTime = Date.now();
           const MAX_WAIT_MS = 5 * 60 * 1000;
-        
           function checkStatus() {
             fetch("{% url 'main:analysis_status' %}")
               .then(r => r.json())
@@ -410,7 +237,6 @@
               })
               .catch(() => setTimeout(checkStatus, 10000));
           }
-      
           checkStatus();
         })();
         {% endif %}
@@ -418,5 +244,4 @@
 
     {% block extra_js %}{% endblock %}
 </body>
-
 </html>

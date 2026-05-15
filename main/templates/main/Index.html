@@ -6,37 +6,16 @@
 {% block body_attributes %}data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="51" class="no-padding-top home-page"{% endblock %}
 
 {% block hero %}
-<div class="container-fluid bg-primary hero-header">
-    <div class="container px-lg-5 hero-content">
-        <div class="row g-4 align-items-center">
-            <div class="col-lg-8 text-center text-lg-start">
-                <h1 class="text-white mb-4 animated slideInDown">
-                    Nexus Source Code Analysis Tool
-                </h1>
-
-                <p class="text-white pb-3 animated slideInDown">
-                    Analizá tus proyectos con +170 métricas de Calidad de Software
-                    y exportá los resultados en un formato XML, JSON o CSV
-                </p>
-
-                <a href="{% url 'main:importarProyecto' %}"
-                   class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">
-                    Analizar proyecto
-                </a>
+<div class="container-fluid bg-primary hero-header" style="min-height: 570px;">
+    <div class="container px-lg-5">
+        <div class="row g-8">
+            <div class="col-lg-9 text-center text-lg-start">
+                <h1 class="text-white mb-4 animated slideInDown">Nexus Source Code Analysis Tool</h1>
+                <p class="text-white pb-3 animated slideInDown">Analizá tus proyectos con +170 métricas de Calidad de Software y exportá los resultados en un formato XML, JSON o CSV</p>
+                <a href="{% url 'main:importarProyecto' %}" class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">Analizar proyecto</a>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Wave separadora -->
-<div class="wave-divider">
-    <svg xmlns="http://www.w3.org/2000/svg"
-         viewBox="0 0 1440 120"
-         preserveAspectRatio="none">
-        <path fill="white"
-              d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z">
-        </path>
-    </svg>
 </div>
 {% endblock %}
 
@@ -59,7 +38,7 @@
 </div>
 <!-- About End -->
 
-<!-- ISO/IEC 25010 — container-fluid para que el fondo ocupe todo el ancho -->
+<!-- ISO/IEC 25010 -->
 <div class="container-fluid py-5" style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);">
     <div class="container py-5 px-lg-5">
         <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 640px;">
@@ -99,9 +78,8 @@
         </div>
     </div>
 </div>
-<!-- ISO/IEC 25010 -->
 
-<!-- How does it work — container-fluid para que el fondo ocupe todo el ancho -->
+<!-- How does it work -->
 <div class="container-fluid py-5" style="background: #f0f2ff;">
     <div class="container py-5 px-lg-5">
         <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
@@ -112,36 +90,30 @@
         <div class="row g-4 justify-content-center">
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
                 <div class="text-center px-3 position-relative">
-                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4" style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-folder2-open" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
-                    <span class="badge text-primary-gradient border border-primary-gradient mb-2"
-                          style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 01</span>
+                    <span class="badge text-primary-gradient border border-primary-gradient mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 01</span>
                     <h5 class="fw-semibold mb-2">Subí tu proyecto</h5>
                     <p class="text-muted small">Cargá un archivo ZIP o ingresá la URL de un repositorio GitHub público de Java.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
                 <div class="text-center px-3">
-                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4" style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-gear-wide-connected" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
-                    <span class="badge text-primary-gradient border border-primary-gradient mb-2"
-                          style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 02</span>
+                    <span class="badge text-primary-gradient border border-primary-gradient mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 02</span>
                     <h5 class="fw-semibold mb-2">Análisis automático</h5>
                     <p class="text-muted small">SonarQube y SourceMeter procesan el código en paralelo y extraen más de 170 métricas de calidad.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
                 <div class="text-center px-3">
-                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4"
-                         style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
+                    <div class="d-flex align-items-center justify-content-center mx-auto mb-4" style="width:80px; height:80px; border-radius:50%; background: linear-gradient(135deg, #ede9ff, #dbeafe);">
                         <i class="bi bi-bar-chart-line" style="font-size: 2rem; color: #6f42c1;"></i>
                     </div>
-                    <span class="badge text-primary-gradient border border-primary-gradient mb-2"
-                          style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 03</span>
+                    <span class="badge text-primary-gradient border border-primary-gradient mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px;">PASO 03</span>
                     <h5 class="fw-semibold mb-2">Explorá y exportá</h5>
                     <p class="text-muted small">Navegá los resultados por proyecto, componente o clase. Exportá en XML, JSON o CSV.</p>
                 </div>
@@ -149,7 +121,6 @@
         </div>
     </div>
 </div>
-<!-- How does it work -->
 
 <!-- Alcance -->
 <div class="container-fluid py-5">
@@ -191,5 +162,4 @@
         </div>
     </div>
 </div>
-<!-- Alcance -->
 {% endblock %}
