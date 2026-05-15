@@ -303,7 +303,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 .hero-header {
     position: relative;
     overflow: hidden;
-    padding: 12rem 0 0 0;
+    padding: 12rem 0 8 0;
     background: linear-gradient(to bottom right, var(--primary), var(--secondary));
 }
 
