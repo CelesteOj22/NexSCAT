@@ -303,7 +303,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 .hero-header {
     position: relative;
     overflow: hidden;
-    padding: 12rem 0 8rem 0;
+    padding: 12rem 0 0 0;
     background: linear-gradient(to bottom right, var(--primary), var(--secondary));
 }
 
@@ -317,7 +317,6 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
     position: relative;
     line-height: 0;
     margin-top: -2px;
-    overflow: hidden;
 }
 
 .wave-divider svg {
@@ -509,7 +508,7 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 .footer-wave {
     position: relative;
     line-height: 0;
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: -2px;
 }
 
