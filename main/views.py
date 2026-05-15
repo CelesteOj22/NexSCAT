@@ -227,7 +227,8 @@ def importarProyecto(request):
             # Guardar ZIP en disco y delegar extracción + análisis a Celery
             import uuid as _uuid
             from .tasks import procesar_zip_y_analizar
-            zip_path = f"/tmp/nexscat_{_uuid.uuid4().hex}.zip"
+            os.makedirs("/app/proyectos/tmp", exist_ok=True)
+            zip_path = f"/app/proyectos/tmp/nexscat_{_uuid.uuid4().hex}.zip"
             with open(zip_path, 'wb') as f:
                 for chunk in zip_file.chunks():
                     f.write(chunk)

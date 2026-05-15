@@ -602,12 +602,9 @@ def procesar_zip_y_analizar(self, zip_path: str, usuario_id: int, token: str, se
                 }
             )
             task_id = celery_uuid()
-            transaction.on_commit(
-                lambda pid=project.id_project, tid=task_id, tok=token:
-                    analizar_proyecto_paralelo.apply_async(
-                        kwargs={'project_id': pid, 'token': tok},
-                        task_id=tid
-                    )
+            analizar_proyecto_paralelo.apply_async(
+                kwargs={'project_id': project.id_project, 'token': token},
+                task_id=task_id
             )
             task_ids.append({
                 'project_id': project.id_project,
@@ -615,10 +612,8 @@ def procesar_zip_y_analizar(self, zip_path: str, usuario_id: int, token: str, se
                 'task_id': task_id,
                 'mode': 'parallel',
             })
-
-        # Guardar las task_ids individuales en cache para que analysis_status las lea
+        
         cache.set(f'zip_tasks_{session_key}', task_ids, timeout=3600)
-
         return {'success': True, 'projects': len(task_ids)}
 
     except Exception as e:
