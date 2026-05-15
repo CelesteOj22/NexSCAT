@@ -300,24 +300,30 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 
 
 /*** Hero Header ***/
-/* .hero-header {
-    margin-bottom: 6rem;
-    padding: 16rem 0 0 0;
-    background:
-        url(../img/bg-circle.png),
-        url(../img/bg-triangle.png),
-        linear-gradient(to bottom right, var(--primary), var(--secondary));
-    background-position:
-        left 0px top 0px,
-        right 0px top 50%,
-        center bottom;
-    background-repeat: no-repeat;
-} */
-
 .hero-header {
-    margin-bottom: 0;
-    padding: 16rem 0 0 0;
+    position: relative;
+    overflow: hidden;
+    padding: 12rem 0 8rem 0;
     background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+}
+
+.wave-divider {
+    position: relative;
+    line-height: 0;
+    margin-top: -2px;
+    overflow: hidden;
+}
+
+.wave-divider svg {
+    display: block;
+    width: 100%;
+    height: clamp(90px, 10vw, 180px);
 }
 
 .center-wrapper {
@@ -329,8 +335,14 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 }
 
 @media (max-width: 991.98px) {
+
     .hero-header {
-        padding: 6rem 0 9rem 0;
+        padding: 8rem 0 5rem 0;
+    }
+
+    .wave-divider svg,
+    .footer-wave svg {
+        height: 90px;
     }
 }
 
@@ -493,10 +505,25 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
         center top;
     background-repeat: no-repeat;
 } */
+
+.footer-wave {
+    position: relative;
+    line-height: 0;
+    overflow: hidden;
+    margin-bottom: -2px;
+}
+
+.footer-wave svg {
+    display: block;
+    width: 100%;
+    height: clamp(90px, 10vw, 180px);
+}
+
 .footer {
     margin-top: 0;
-    padding-top: 3rem;
+    padding-top: 5rem;
     background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+    overflow: hidden;
 }
 
 .footer .btn.btn-social {

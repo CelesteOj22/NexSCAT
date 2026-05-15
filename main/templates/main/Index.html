@@ -6,22 +6,36 @@
 {% block body_attributes %}data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="51" class="no-padding-top home-page"{% endblock %}
 
 {% block hero %}
-<div class="container-fluid bg-primary hero-header" style="min-height: 570px;">
-    <div class="container px-lg-5">
-        <div class="row g-8">
-            <div class="col-lg-9 text-center text-lg-start">
-                <h1 class="text-white mb-4 animated slideInDown">Nexus Source Code Analysis Tool</h1>
-                <p class="text-white pb-3 animated slideInDown">Analizá tus proyectos con +170 métricas de Calidad de Software y exportá los resultados en un formato XML, JSON o CSV</p>
-                <a href="{% url 'main:importarProyecto' %}" class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">Analizar proyecto</a>
+<div class="container-fluid bg-primary hero-header">
+    <div class="container px-lg-5 hero-content">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h1 class="text-white mb-4 animated slideInDown">
+                    Nexus Source Code Analysis Tool
+                </h1>
+
+                <p class="text-white pb-3 animated slideInDown">
+                    Analizá tus proyectos con +170 métricas de Calidad de Software
+                    y exportá los resultados en un formato XML, JSON o CSV
+                </p>
+
+                <a href="{% url 'main:importarProyecto' %}"
+                   class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">
+                    Analizar proyecto
+                </a>
             </div>
         </div>
     </div>
 </div>
-<div class="container-fluid" style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%); margin: 0; padding: 0; line-height: 0; font-size: 0; overflow: visible;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80"
-         preserveAspectRatio="none"
-         style="display: block; width: 100%; height: 80px; overflow: visible;">
-        <path fill="white" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
+
+<!-- Wave separadora -->
+<div class="wave-divider">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 1440 120"
+         preserveAspectRatio="none">
+        <path fill="white"
+              d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z">
+        </path>
     </svg>
 </div>
 {% endblock %}
