@@ -476,12 +476,11 @@ body.home-page .sticky-top.navbar-light .navbar-brand h1 {
 
 /*** Footer ***/
 .footer {
-    margin-top: 6rem;
+    margin-top: 4rem;
     padding-top: 4rem;
     background:
         url(../img/bg-circle.png),
         url(../img/bg-triangle.png),
-        url(../img/bg-top.png),
         linear-gradient(to bottom right, var(--primary), var(--secondary));
     background-position:
         left 0px bottom 0px,
