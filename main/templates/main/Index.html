@@ -6,67 +6,22 @@
 {% block body_attributes %}data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="51" class="no-padding-top home-page"{% endblock %}
 
 {% block hero %}
-<div style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%); position: relative; padding: 120px 0 0;">
+<div class="container-fluid bg-primary hero-header" style="min-height: 570px;">
     <div class="container px-lg-5">
-        <div class="row g-5 align-items-center pb-5">
-            <div class="col-lg-8 text-center text-lg-start">
-                <p class="text-white-50 fw-semibold mb-2" style="letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem;">
-                    Análisis estático de código
-                </p>
-                <h1 class="text-white mb-4 animated slideInDown" style="font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700; line-height: 1.2;">
-                    Nexus Source Code<br>Analysis Tool
-                </h1>
-                <p class="mb-5 animated slideInDown" style="color: rgba(255,255,255,0.8); font-size: 1.1rem; max-width: 540px;">
-                    Analizá tus proyectos con +170 métricas de Calidad de Software y exportá los resultados en XML, JSON o CSV.
-                </p>
-                <div class="d-flex gap-3 justify-content-center justify-content-lg-start flex-wrap">
-                    <a href="{% url 'main:importarProyecto' %}" class="btn py-3 px-5 rounded-pill fw-semibold animated slideInRight"
-                       style="background: white; color: #6f42c1; font-size: 1rem;">
-                        <i class="bi bi-upload me-2"></i>Analizar proyecto
-                    </a>
-                    <a href="{% url 'main:dashboardAnalisis' %}" class="btn py-3 px-5 rounded-pill fw-semibold"
-                       style="border: 2px solid rgba(255,255,255,0.5); color: white; font-size: 1rem;">
-                        <i class="bi bi-bar-chart me-2"></i>Ver resultados
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 text-center d-none d-lg-block">
-                <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 30px;">
-                    <div class="d-flex justify-content-around mb-3">
-                        <div class="text-white text-center">
-                            <div style="font-size: 2rem; font-weight: 700;">172</div>
-                            <div style="font-size: 0.75rem; opacity: 0.7;">Métricas</div>
-                        </div>
-                        <div class="text-white text-center">
-                            <div style="font-size: 2rem; font-weight: 700;">2</div>
-                            <div style="font-size: 0.75rem; opacity: 0.7;">Herramientas</div>
-                        </div>
-                        <div class="text-white text-center">
-                            <div style="font-size: 2rem; font-weight: 700;">3</div>
-                            <div style="font-size: 0.75rem; opacity: 0.7;">Formatos</div>
-                        </div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px;">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4ade80;"></div>
-                            <span class="text-white" style="font-size: 0.85rem;">SonarQube conectado</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4ade80;"></div>
-                            <span class="text-white" style="font-size: 0.85rem;">SourceMeter disponible</span>
-                        </div>
-                    </div>
-                </div>
+        <div class="row g-8">
+            <div class="col-lg-9 text-center text-lg-start">
+                <h1 class="text-white mb-4 animated slideInDown">Nexus Source Code Analysis Tool</h1>
+                <p class="text-white pb-3 animated slideInDown">Analizá tus proyectos con +170 métricas de Calidad de Software y exportá los resultados en un formato XML, JSON o CSV</p>
+                <a href="{% url 'main:importarProyecto' %}" class="btn btn-secondary-gradient py-sm-3 px-4 px-sm-5 rounded-pill animated slideInRight">Analizar proyecto</a>
             </div>
         </div>
     </div>
-    <!-- Ola SVG que transiciona al blanco -->
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80"
+</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80"
          preserveAspectRatio="none"
          style="display: block; width: 100%; height: 80px; margin-bottom: -2px;">
         <path fill="white" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
-    </svg>
-</div>
+</svg>
 {% endblock %}
 
 {% block content %}

@@ -291,60 +291,54 @@
           </div>
         </div>
         <!-- Content End -->
-
+        
+        <!-- Wave Footer -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80"
+             preserveAspectRatio="none"
+             style="display: block; width: 100%; height: 80px; margin-bottom: -2px;">
+            <path fill="#0d6efd" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
+        </svg>
+        
         <!-- Footer Start -->
-        <div class="container-fluid text-light" style="background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%); position: relative;">
-            <!-- Ola superior -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 60"
-                 preserveAspectRatio="none"
-                 style="display: block; width: 100%; height: 60px; margin-top: -2px;">
-                <path fill="white" d="M0,30 C360,60 1080,0 1440,30 L1440,0 L0,0 Z"/>
-            </svg>
-            <div class="container py-4 px-lg-5">
-                <div class="row g-4 align-items-start">
-                    <div class="col-md-4">
-                        <h5 class="text-white fw-bold mb-2">NexSCAT</h5>
-                        <p class="mb-0" style="color: rgba(255,255,255,0.75); font-size: 0.9rem;">
-                            Integración de herramientas de análisis estático del código para estudios empíricos en calidad del software.
-                        </p>
+        <div class="container-fluid bg-primary text-light footer wow fadeIn" data-wow-delay="0.1s" >
+            <div class="container py-5 px-lg-5">
+                <div class="row g-5">
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">NexSCAT</h4>
+                        <p class="mb-2">Integración de herramientas del análisis estático del código para el soporte de estudios empíricos en la calidad del software</p>
                     </div>
-                    <div class="col-md-4">
-                        <h6 class="text-white fw-semibold mb-2">Repositorio</h6>
-                        <a class="d-flex align-items-center gap-2 text-decoration-none" href="https://github.com/CelesteOj22/NexSCAT" target="_blank"
-                           style="color: rgba(255,255,255,0.75); font-size: 0.9rem;">
-                            <i class="bi bi-github"></i> NexSCAT en GitHub
-                        </a>
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">Github</h4>
+                        <a class="btn btn-link" href="https://github.com/CelesteOj22/NexSCAT" target="_blank">NexSCAT Repository</a>
                     </div>
-                    <div class="col-md-4">
-                        <h6 class="text-white fw-semibold mb-2">Herramientas</h6>
-                        <a class="d-block text-decoration-none mb-1" href="https://www.sonarsource.com/products/sonarqube/" target="_blank"
-                           style="color: rgba(255,255,255,0.75); font-size: 0.9rem;">
-                            <i class="bi bi-box-arrow-up-right me-1"></i>SonarQube
-                        </a>
-                        <a class="d-block text-decoration-none" href="https://sourcemeter.com/" target="_blank"
-                           style="color: rgba(255,255,255,0.75); font-size: 0.9rem;">
-                            <i class="bi bi-box-arrow-up-right me-1"></i>SourceMeter
-                        </a>
-                    </div>
-                </div>
-                <hr style="border-color: rgba(255,255,255,0.2); margin: 20px 0 15px;">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">
-                        &copy; {% now "Y" %} <a href="{% url 'main:home' %}" class="text-white text-decoration-none">NexSCAT</a> — Todos los derechos reservados.
-                    </span>
-                    <div class="d-flex gap-3">
-                        <a href="{% url 'main:home' %}" style="color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none;">Home</a>
-                        <a href="{% url 'main:dashboardAnalisis' %}" style="color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none;">Dashboard</a>
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'main:logout' %}" style="color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none;">Cerrar Sesión</a>
-                        {% else %}
-                            <a href="{% url 'main:login' %}" style="color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none;">Login</a>
-                        {% endif %}
+                    <div class="col-md-6 col-lg-4">
+                        <h4 class="text-white mb-4">Sitios Web Oficiales</h4>
+                        <a class="btn btn-link" href="https://www.sonarsource.com/products/sonarqube/" target="_blank">SonarQube</a>
+                        <a class="btn btn-link" href="https://sourcemeter.com/" target="_blank">SourceMeter</a>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Footer End -->
+            <div class="container px-lg-5">
+                <div class="copyright">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                            &copy; {% now "Y" %} <a class="border-bottom" href="{% url 'main:home' %}">NexSCAT</a>, Todos los derechos reservados.
+                        </div>
+                        <div class="col-md-6 text-center text-md-end">
+                            <div class="footer-menu">
+                                <a href="{% url 'main:home' %}">Home</a>
+                                <a href="{% url 'main:dashboardAnalisis' %}">Dashboard</a>
+                                {% if user.is_authenticated %}
+                                    <a href="{% url 'main:logout' %}">Cerrar Sesión</a>
+                                {% else %}
+                                    <a href="{% url 'main:login' %}">Login</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer End -->
 
         <!-- Back to Top -->
         <a href="#" class="btn btn-lg btn-lg-square back-to-top pt-2"><i class="bi bi-arrow-up text-white"></i></a>
